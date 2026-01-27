@@ -173,7 +173,7 @@ export default function SettingsPage() {
 
             const { error } = await supabase
                 .from('profiles')
-                .update(updates)
+                .upsert(updates) // Upsert handles both insert and update based on ID
                 .eq('id', profile.id);
 
             if (error) throw error;
