@@ -1,6 +1,16 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { NeuralCanvas } from "@/components/editor/neural-canvas";
+import { Suspense } from "react";
+
+function EditorContent() {
+  const searchParams = useSearchParams();
+  const template = searchParams.get("template");
+  const initialPlatform = (template === "instagram" ? "instagram" : "linkedin") as "linkedin" | "instagram";
+
+  return <NeuralCanvas initialPlatform={initialPlatform} />;
+}
 
 export default function EditorPage() {
   return (
@@ -12,7 +22,9 @@ export default function EditorPage() {
         </p>
       </div>
       <div className="h-[calc(100%-60px)]">
-        <NeuralCanvas />
+        <Suspense fallback={<div>Carregando editor...</div>}>
+          <EditorContent />
+        </Suspense>
       </div>
     </div>
   );

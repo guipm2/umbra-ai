@@ -24,19 +24,19 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Editor",
+    label: "Ghostwriter",
     href: "/dashboard/editor",
     icon: PenTool,
+  },
+  {
+    label: "Brain",
+    href: "/dashboard/brain",
+    icon: BrainCircuit,
   },
   {
     label: "Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
-  },
-  {
-    label: "AI Brain",
-    href: "/dashboard/brain",
-    icon: BrainCircuit,
   },
 ];
 
@@ -63,7 +63,7 @@ export function Sidebar() {
         </div>
         {showLabels && (
           <span className="text-lg font-semibold tracking-tight text-foreground neon-text">
-            Aura AI
+            Umbra AI
           </span>
         )}
         {/* Mobile close button */}
@@ -128,18 +128,21 @@ export function Sidebar() {
         })}
 
         {/* User profile */}
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-electric/20">
-            <User className="h-4 w-4 text-neon" />
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 mt-2 bg-gradient-to-r from-white/5 to-transparent border border-white/5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-electric to-neon shadow-lg shadow-neon/20">
+            <User className="h-5 w-5 text-white" />
           </div>
           {showLabels && (
             <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">
-                Usuário
+              <p className="truncate text-sm font-semibold text-white">
+                Guilherme
               </p>
-              <p className="truncate text-xs text-muted-foreground">
-                Pro Plan
-              </p>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-neon animate-pulse" />
+                <p className="truncate text-[10px] font-medium text-neon tracking-wide uppercase">
+                  Elite Plan
+                </p>
+              </div>
             </div>
           )}
         </div>

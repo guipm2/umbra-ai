@@ -37,9 +37,13 @@ const platformTemplates = {
   },
 };
 
-export function NeuralCanvas() {
+interface NeuralCanvasProps {
+  initialPlatform?: "linkedin" | "instagram";
+}
+
+export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps) {
   const [platform, setPlatform] = useState<"linkedin" | "instagram">(
-    "linkedin"
+    initialPlatform
   );
   const [content, setContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
