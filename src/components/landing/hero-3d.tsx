@@ -6,6 +6,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 function FloatingPills() {
     const count = 30;
@@ -89,11 +90,11 @@ export function Hero3D() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-                    className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white mb-6"
+                    className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6"
                 >
-                    Sua Presença Digital <br />
+                    Autoridade Digital, <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric to-neon neon-text">
-                        Elevada ao Cubo
+                        Construída nos Bastidores
                     </span>
                 </motion.h1>
 
@@ -103,8 +104,7 @@ export function Hero3D() {
                     transition={{ duration: 0.8, delay: 0.3 }}
                     className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed"
                 >
-                    A plataforma definitiva de Inteligência Artificial para criadores e marcas.
-                    Automatize, analise e cresça com o poder dos dados.
+                    Transforme seu conhecimento técnico em influência real. A Umbra aprende sua voz e gerencia sua presença no LinkedIn e Instagram de forma autônoma, enquanto você foca no que realmente importa.
                 </motion.p>
 
                 <motion.div
@@ -113,10 +113,13 @@ export function Hero3D() {
                     transition={{ duration: 0.8, delay: 0.5 }}
                     className="flex flex-col sm:flex-row items-center justify-center gap-4"
                 >
-                    <button className="px-8 py-4 rounded-2xl bg-white text-black font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)]">
+                    <Link href="/onboarding" className="px-8 py-4 rounded-2xl bg-white text-black font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)]">
                         Começar Grátis
-                    </button>
-                    <button className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-lg hover:bg-white/10 transition-colors backdrop-blur-md">
+                    </Link>
+                    <button
+                        onClick={() => document.getElementById('features-grid')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-lg hover:bg-white/10 transition-colors backdrop-blur-md"
+                    >
                         Ver Demo
                     </button>
                 </motion.div>

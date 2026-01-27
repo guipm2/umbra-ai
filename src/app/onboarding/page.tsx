@@ -1,259 +1,196 @@
+
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Sparkles,
-  ArrowRight,
-  Linkedin,
-  Instagram,
-  Zap,
-  BrainCircuit,
-  TrendingUp,
-  Loader2,
-} from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, ArrowRight, Link as LinkIcon, Lock, Loader2, ScanLine } from "lucide-react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
-
-function isValidProfileUrl(value: string): boolean {
-  try {
-    const u = new URL(value);
-    return (
-      u.hostname.includes("linkedin.com") ||
-      u.hostname.includes("instagram.com")
-    );
-  } catch {
-    return false;
-  }
-}
+import { supabase } from "@/lib/supabase";
+import { VoiceAnalysisChart } from "@/components/dashboard/voice-analysis-chart";
 
 export default function OnboardingPage() {
+  const [step, setStep] = useState<"url" | "account" | "radar">("url");
   const [url, setUrl] = useState("");
-  const [urlError, setUrlError] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [step, setStep] = useState(0);
-  const router = useRouter();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+  const handleUrlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!url) return;
 
-  const handleAnalyze = useCallback(() => {
-    if (!url.trim()) return;
-    if (!isValidProfileUrl(url.trim())) {
-      setUrlError("Insira uma URL válida do LinkedIn ou Instagram");
-      return;
-    }
-    setUrlError("");
-    setIsAnalyzing(true);
-    setStep(0);
+    setAnalyzing(true);
+    // Simulate "Deep Scan"
+    setTimeout(() => {
+      setAnalyzing(false);
+      setStep("account");
+    }, 2500);
+  };
 
-    let currentStep = 0;
-    intervalRef.current = setInterval(() => {
-      currentStep++;
-      setStep(currentStep);
-      if (currentStep >= 4) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        timeoutRef.current = setTimeout(() => {
-          setIsAnalyzing(false);
-          router.push("/dashboard");
-        }, 1000);
-      }
-    }, 1200);
-  }, [url, router]);
+  const handleAccountSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
-  const steps = [
-    "Conectando ao perfil...",
-    "Analisando tom de voz...",
-    "Mapeando tópicos principais...",
-    "Criando sua persona digital...",
-  ];
+    // Simulate creation for UX flow, then go to Radar
+    // In real app: call supabase.auth.signUp() here
+    setTimeout(() => {
+      setLoading(false);
+      setStep("radar");
+    }, 1500);
+  };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-deep bg-grid-pattern">
-      {/* Background glow effects */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/4 top-1/4 h-[500px] w-[500px] rounded-full bg-electric/5 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-[400px] w-[400px] rounded-full bg-neon/5 blur-[100px]" />
+    <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[50vh] h-[50vh] bg-electric/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[50vh] h-[50vh] bg-neon/10 rounded-full blur-[100px] animate-pulse" />
       </div>
 
-      <div className="relative z-10 w-full max-w-2xl px-4">
-        {/* Logo */}
-        <div className="mb-8 flex flex-col items-center">
-          <div className="mb-6 relative h-32 w-32 animate-float">
-            <Image
-              src="/assets/3d/hero_ai_mind.png"
-              alt="Umbra AI Mind"
-              fill
-              className="object-contain drop-shadow-[0_0_30px_rgba(157,80,187,0.6)]"
-              priority
-            />
-          </div>
-          <h1 className="mb-2 text-4xl font-bold tracking-tight text-foreground neon-text">
-            Umbra AI
-          </h1>
-          <p className="text-center text-lg text-muted-foreground">
-            Sua presença digital, potencializada por inteligência artificial
-          </p>
-        </div>
+      <div className="w-full max-w-lg relative z-10">
 
-        {/* Main input card */}
-        <div className="glass-strong rounded-3xl p-8 neon-glow">
-          <div className="mb-6 text-center">
-            <h2 className="mb-2 text-xl font-semibold text-foreground">
-              Vamos começar a mágica
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Cole o link do seu perfil para analisarmos sua presença digital
-            </p>
-          </div>
-
-          {/* Platform selector pills */}
-          <div className="mb-6 flex items-center justify-center gap-3">
-            <div className="flex items-center gap-1.5 rounded-full bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
-              <Linkedin className="h-4 w-4" />
-              LinkedIn
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-pink-500/10 px-4 py-2 text-sm text-pink-400">
-              <Instagram className="h-4 w-4" />
-              Instagram
-            </div>
-          </div>
-
-          {/* Input */}
-          <div className="relative mb-6">
-            <label htmlFor="profile-url" className="sr-only">
-              URL do perfil
-            </label>
-            <div className="gradient-border rounded-2xl">
-              <input
-                id="profile-url"
-                type="url"
-                value={url}
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  if (urlError) setUrlError("");
-                }}
-                placeholder="https://linkedin.com/in/seu-perfil"
-                className={cn(
-                  "w-full rounded-2xl bg-deep/80 px-6 py-4 text-base text-foreground placeholder:text-muted-foreground/50 focus:outline-none",
-                  urlError && "ring-1 ring-destructive"
-                )}
-                disabled={isAnalyzing}
-                aria-describedby={urlError ? "url-error" : undefined}
-                aria-invalid={urlError ? true : undefined}
-              />
-            </div>
-            {urlError && (
-              <p id="url-error" role="alert" className="mt-2 text-xs text-destructive">{urlError}</p>
-            )}
-          </div>
-
-          {/* Analyze button */}
-          <button
-            onClick={handleAnalyze}
-            disabled={!url.trim() || isAnalyzing}
-            className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold transition-all",
-              url.trim() && !isAnalyzing
-                ? "bg-electric text-white hover:bg-electric/90 neon-glow-strong"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            )}
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Analisando...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-5 w-5" />
-                Analisar Perfil
-                <ArrowRight className="h-5 w-5" />
-              </>
-            )}
-          </button>
-
-          {/* Analysis steps */}
-          {isAnalyzing && (
-            <div className="mt-6 space-y-3">
-              {steps.map((s, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm transition-all duration-500",
-                    step > i
-                      ? "bg-electric/10 text-neon"
-                      : step === i
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground/30"
-                  )}
-                >
-                  {step > i ? (
-                    <div className="h-5 w-5 rounded-full bg-electric/30 flex items-center justify-center">
-                      <Sparkles className="h-3 w-3 text-neon" />
-                    </div>
-                  ) : step === i ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-neon" />
-                  ) : (
-                    <div className="h-5 w-5 rounded-full bg-muted" />
-                  )}
-                  {s}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Features */}
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[
-            {
-              icon: BrainCircuit,
-              title: "IA Personalizada",
-              desc: "Aprende seu estilo único",
-            },
-            {
-              icon: Zap,
-              title: "Conteúdo Autônomo",
-              desc: "Posts gerados automaticamente",
-            },
-            {
-              icon: TrendingUp,
-              title: "Crescimento Real",
-              desc: "Engajamento otimizado por dados",
-            },
-          ].map((feature) => (
-            <div
-              key={feature.title}
-              className="glass rounded-xl p-4 text-center transition-all hover:neon-glow"
+        <AnimatePresence mode="wait">
+          {/* Step 1: The First Step (URL) */}
+          {step === "url" && (
+            <motion.div
+              key="step-url"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
             >
-              <feature.icon className="mx-auto mb-2 h-6 w-6 text-neon" />
-              <h3 className="mb-1 text-sm font-semibold text-foreground">
-                {feature.title}
-              </h3>
-              <p className="text-xs text-muted-foreground">{feature.desc}</p>
-            </div>
-          ))}
-        </div>
+              <div className="mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 mb-6 relative">
+                  {analyzing ? (
+                    <ScanLine className="w-8 h-8 text-neon animate-pulse" />
+                  ) : (
+                    <LinkIcon className="w-8 h-8 text-white" />
+                  )}
+                  {analyzing && (
+                    <span className="absolute inset-0 rounded-2xl border-2 border-neon animate-ping opacity-50" />
+                  )}
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-3">Inicie sua Iniciação na Umbra.</h1>
+                <p className="text-gray-400">Cole o link do seu perfil principal para começarmos a escanear sua autoridade.</p>
+              </div>
 
-        {/* Automation Flow Section */}
-        <div className="mt-16 text-center">
-          <div className="relative mx-auto h-48 w-full max-w-lg opacity-80 transition-opacity hover:opacity-100">
-            <Image
-              src="/assets/3d/automation_flow_diagram.png"
-              alt="Fluxo de Automação Umbra"
-              fill
-              className="object-contain drop-shadow-[0_0_20px_rgba(157,80,187,0.3)]"
-            />
-          </div>
-          <p className="mt-4 text-xs text-muted-foreground/50">Fluxo de processamento autônomo</p>
-        </div>
+              <form onSubmit={handleUrlSubmit} className="relative max-w-md mx-auto">
+                <input
+                  type="url"
+                  placeholder="https://www.linkedin.com/in/seu-perfil"
+                  className="w-full h-14 pl-6 pr-14 rounded-full bg-white/5 border-2 border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon focus:ring-4 focus:ring-neon/10 transition-all text-center"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  disabled={analyzing}
+                />
+                <button
+                  type="submit"
+                  disabled={!url || analyzing}
+                  className="absolute right-2 top-2 h-10 w-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {analyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+                </button>
+              </form>
+
+              {analyzing && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-6 text-sm text-neon font-mono"
+                >
+                  Mapeando arquitetura de conteúdo...
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+
+          {/* Step 2: Account Creation */}
+          {step === "account" && (
+            <motion.div
+              key="step-account"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl"
+            >
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-white">Quase lá, Fundador.</h2>
+                <p className="text-sm text-gray-400">Crie suas credenciais para acessar sua Central de Comando.</p>
+              </div>
+
+              <form onSubmit={handleAccountSubmit} className="space-y-4">
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    placeholder="Nome Completo"
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-neon/50 focus:bg-white/10 transition-all font-light"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                  <input
+                    type="email"
+                    placeholder="E-mail Profissional"
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-neon/50 focus:bg-white/10 transition-all font-light"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                  <input
+                    type="password"
+                    placeholder="Senha Forte"
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-neon/50 focus:bg-white/10 transition-all font-light"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 mt-4 rounded-xl bg-gradient-to-r from-electric to-neon text-white font-bold tracking-wide shadow-lg shadow-neon/20 hover:shadow-neon/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Criar Minha Conta"}
+                </button>
+              </form>
+            </motion.div>
+          )}
+
+          {/* Step 3: Sneak Peek (Radar) */}
+          {step === "radar" && (
+            <motion.div
+              key="step-radar"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center"
+            >
+              <div className="mb-6">
+                <Sparkles className="w-12 h-12 text-neon mx-auto mb-4" />
+                <h2 className="text-3xl font-bold text-white mb-2">Análise Preliminar Concluída</h2>
+                <p className="text-gray-400 max-w-md mx-auto">
+                  Identificamos um forte potencial de autoridade técnica no seu perfil.
+                </p>
+              </div>
+
+              <div className="relative max-w-sm mx-auto aspect-square bg-gradient-to-b from-white/5 to-transparent rounded-full border border-white/10 p-4 mb-8">
+                <div className="absolute inset-0 bg-neon/5 rounded-full blur-3xl" />
+                <VoiceAnalysisChart />
+              </div>
+
+              <button
+                onClick={() => window.location.href = '/dashboard'}
+                className="px-10 py-4 rounded-full bg-white text-black font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)]"
+              >
+                Acessar Dashboard
+              </button>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+
       </div>
     </div>
   );

@@ -1,14 +1,23 @@
 
 import { Hero3D } from "@/components/landing/hero-3d";
+import { TrustBar } from "@/components/landing/trust-bar";
+import { ProcessSection } from "@/components/landing/process-section";
+import { FeaturesGrid } from "@/components/landing/features-grid";
+import { UseCases } from "@/components/landing/use-cases";
 import { Pricing } from "@/components/landing/pricing";
-import { Footer } from "@/components/landing/footer"; // Assuming we'll create this or stub it
+import { Footer } from "@/components/landing/footer";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-black selection:bg-neon selection:text-white">
+    <main className="min-h-screen bg-black selection:bg-neon selection:text-white pb-20">
       <Hero3D />
-      {/* Additional sections can verify vertical rhythm */}
-      <Pricing />
+      <TrustBar />
+      <ProcessSection />
+      <FeaturesGrid />
+      <UseCases />
+      <div id="pricing">
+        <Pricing />
+      </div>
 
       <footer className="py-8 bg-black border-t border-white/10 text-center text-gray-500 text-sm">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">

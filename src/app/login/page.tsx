@@ -5,7 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, ArrowRight, Lock } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -66,18 +66,18 @@ export default function LoginPage() {
                 className="w-full max-w-md p-8 rounded-3xl glass-strong border border-white/10 relative z-10"
             >
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-electric/20 mb-4">
-                        <Sparkles className="w-6 h-6 text-neon" />
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-electric/20 mb-4 shadow-lg shadow-electric/20">
+                        <Lock className="w-6 h-6 text-neon" />
                     </div>
-                    <h1 className="text-2xl font-bold text-white mb-2">
-                        {isSignup ? "Criar conta Umbra" : "Bem-vindo ao Umbra AI"}
+                    <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+                        {isSignup ? "Iniciação Umbra" : "Retorno à Sombra"}
                     </h1>
-                    <p className="text-gray-400">
-                        {isSignup ? "Comece sua jornada de influência" : "Acesse seu painel de controle"}
+                    <p className="text-gray-400 font-light">
+                        {isSignup ? "Comece sua jornada de influência" : "Acesse sua central e veja o que a Umbra construiu."}
                     </p>
                 </div>
 
-                <form onSubmit={handleAuth} className="space-y-4">
+                <form onSubmit={handleAuth} className="space-y-5">
                     <AnimatePresence>
                         {isSignup && (
                             <motion.div
@@ -86,21 +86,21 @@ export default function LoginPage() {
                                 exit={{ opacity: 0, height: 0 }}
                                 className="overflow-hidden"
                             >
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1.5">Nome Completo</label>
-                                <input
-                                    id="name"
-                                    type="text"
-                                    placeholder="Seu nome"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon/50 focus:border-transparent transition-all"
-                                />
+                                <div className="relative group">
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        placeholder="Nome Completo"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon/50 focus:bg-white/10 transition-all"
+                                    />
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+                    <div className="relative group">
                         <input
                             id="email"
                             type="email"
@@ -108,26 +108,45 @@ export default function LoginPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon/50 focus:border-transparent transition-all"
+                            className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon/50 focus:bg-white/10 transition-all"
                         />
                     </div>
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-electric to-neon text-white font-semibold shadow-lg shadow-neon/25 hover:shadow-neon/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        className="w-full py-4 rounded-xl bg-gradient-to-r from-electric to-neon text-white font-bold tracking-wide shadow-lg shadow-neon/25 hover:shadow-neon/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
                     >
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isSignup ? "Criar Conta" : "Enviar Link Mágico")}
-                        {!loading && <ArrowRight className="w-4 h-4" />}
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isSignup ? "Iniciar Protocolo" : "Entrar no Dashboard")}
+                        {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-8 flex flex-col gap-4">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/10"></span></div>
+                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-black px-2 text-gray-500">Ou continue com</span></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <button className="flex items-center justify-center py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-white text-sm font-medium">
+                            Google
+                        </button>
+                        <button className="flex items-center justify-center py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-white text-sm font-medium">
+                            LinkedIn
+                        </button>
+                    </div>
+                </div>
+
+                <div className="mt-8 text-center">
                     <button
                         onClick={() => setIsSignup(!isSignup)}
-                        className="text-sm text-gray-400 hover:text-white transition-colors underline decoration-dotted"
+                        className="text-sm text-gray-400 hover:text-white transition-colors"
                     >
-                        {isSignup ? "Já tem uma conta? Entrar" : "Não tem conta? Cadastre-se"}
+                        {isSignup ? "Já tem credenciais? " : "Novo por aqui? "}
+                        <span className="text-neon underline decoration-dotted underline-offset-4 font-medium">
+                            {isSignup ? "Acessar Conta" : "Iniciar Cadastro"}
+                        </span>
                     </button>
                 </div>
 
