@@ -26,7 +26,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased text-foreground bg-background`}>
         <AuthProvider>
           <Navbar />
-          <div className="pt-8">{children}</div>
+          <div className="">{children}</div>
         </AuthProvider>
       </body>
     </html>

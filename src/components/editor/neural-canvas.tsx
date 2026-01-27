@@ -125,9 +125,9 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
   };
 
   return (
-    <div className="flex h-full gap-6">
+    <div className="flex flex-col lg:flex-row h-full gap-6">
       {/* Editor */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-[500px]">
         {/* Toolbar */}
         <div className="glass rounded-t-2xl border-b border-border px-4 py-3">
           <div className="flex items-center justify-between">
@@ -271,7 +271,7 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
 
       {/* Social Preview */}
       {showPreview && (
-        <div className="w-[380px] shrink-0">
+        <div className="w-full lg:w-[380px] shrink-0 h-[400px] lg:h-auto">
           <div className="glass rounded-2xl p-4 h-full">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">

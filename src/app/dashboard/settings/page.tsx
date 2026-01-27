@@ -82,6 +82,8 @@ export default function SettingsPage() {
         fetchProfile();
     }, [router]);
 
+    const [uploading, setUploading] = useState(false);
+
     const handleViaCEP = async (cep: string) => {
         const cleanCep = cep.replace(/\D/g, '');
         if (cleanCep.length !== 8) return;
@@ -102,6 +104,52 @@ export default function SettingsPage() {
             }
         } catch (error) {
             console.error("ViaCEP Error", error);
+        }
+    };
+
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            setUploading(true);
+            if (!event.target.files || event.target.files.length === 0) {
+                throw new Error('Você deve selecionar uma imagem para fazer upload.');
+            }
+
+            const file = event.target.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${profile.id}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
+
+            if (uploadError) {
+                throw uploadError;
+            }
+
+            // Get Public URL
+            const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+            // Update Profile State automatically (User still needs to Click Save to persist to DB or we can auto-save)
+            // Let's autosave the avatar specifically for better UX
+            setProfile(prev => ({ ...prev, avatar_url: data.publicUrl }));
+
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ avatar_url: data.publicUrl })
+                .eq('id', profile.id);
+
+            if (updateError) throw updateError;
+
+            // Refresh page/context implies simple page reload or we trust state update
+            router.refresh();
+
+        } catch (error) {
+            alert('Erro ao fazer upload do avatar!');
+            console.error(error);
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -196,14 +244,39 @@ export default function SettingsPage() {
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {/* Avatar Section */}
                             <div className="flex items-center gap-6 pb-6 border-b border-white/5">
-                                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-electric to-neon flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-neon/20 uppercase">
-                                    {profile.full_name?.[0] || profile.email?.[0] || "U"}
+                                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-electric to-neon flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-neon/20 uppercase overflow-hidden relative group">
+                                    {profile.avatar_url ? (
+                                        <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        profile.full_name?.[0] || profile.email?.[0] || "U"
+                                    )}
+
+                                    {/* Overlay de Upload */}
+                                    <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                        <Loader2 className={`h-6 w-6 text-white ${uploading ? 'animate-spin opacity-100' : 'opacity-0'}`} />
+                                        {!uploading && <span className="text-xs text-white font-medium">Trocar</span>}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handleAvatarUpload}
+                                            disabled={uploading}
+                                        />
+                                    </label>
                                 </div>
                                 <div>
-                                    <button className="text-sm bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg border border-white/5 transition-colors">
-                                        Alterar Foto
-                                    </button>
-                                    <p className="text-xs text-gray-500 mt-2">Puxado automaticamente do Gravatar se disponível.</p>
+                                    <label className="text-sm bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg border border-white/5 transition-colors cursor-pointer inline-flex items-center gap-2">
+                                        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                                        {uploading ? "Enviando..." : "Alterar Foto"}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handleAvatarUpload}
+                                            disabled={uploading}
+                                        />
+                                    </label>
+                                    <p className="text-xs text-gray-500 mt-2">JPG, GIF ou PNG. Máx 2MB.</p>
                                 </div>
                             </div>
 

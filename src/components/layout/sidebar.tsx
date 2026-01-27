@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
+import { useAuth } from "@/components/auth/auth-context";
 
 const navItems = [
   {
@@ -50,6 +51,7 @@ const bottomItems = [
 
 export function Sidebar() {
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
+  const { user, profile } = useAuth();
   const pathname = usePathname();
 
   const showLabels = !collapsed || mobileOpen;
@@ -129,18 +131,22 @@ export function Sidebar() {
 
         {/* User profile */}
         <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 mt-2 bg-gradient-to-r from-white/5 to-transparent border border-white/5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-electric to-neon shadow-lg shadow-neon/20">
-            <User className="h-5 w-5 text-white" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-electric to-neon shadow-lg shadow-neon/20 overflow-hidden">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="User" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-white text-xs font-bold">{profile?.full_name?.[0] || user?.email?.[0]?.toUpperCase() || "U"}</span>
+            )}
           </div>
           {showLabels && (
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-semibold text-white">
-                Guilherme
+                {profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário"}
               </p>
               <div className="flex items-center gap-1.5">
                 <div className="h-1.5 w-1.5 rounded-full bg-neon animate-pulse" />
                 <p className="truncate text-[10px] font-medium text-neon tracking-wide uppercase">
-                  Elite Plan
+                  {profile?.subscription_tier || "Starter"} Plan
                 </p>
               </div>
             </div>

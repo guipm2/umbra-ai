@@ -9,7 +9,7 @@ import { Footer } from "@/components/landing/footer";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-black selection:bg-neon selection:text-white pb-20">
+    <div className="min-h-screen bg-black text-white selection:bg-neon/30 pt-20 selection:text-white pb-20">
       <Hero3D />
       <TrustBar />
       <ProcessSection />
@@ -29,6 +29,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }
