@@ -19,6 +19,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { generateContent } from "@/actions/ai";
 
 const platformTemplates = {
   linkedin: {
@@ -78,14 +79,21 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
     }, 20);
   }, []);
 
-  const handleGenerate = () => {
-    const sampleTexts = {
-      linkedin:
-        "A inteligência artificial não vai substituir profissionais — mas profissionais que usam IA vão substituir os que não usam.\n\nNos últimos 6 meses, implementei IA em 3 áreas do meu workflow:\n\n→ Criação de conteúdo: 3x mais rápido\n→ Análise de dados: Insights em minutos, não horas\n→ Atendimento: Respostas 24/7 com qualidade humana\n\nO resultado? Produtividade aumentou 280% e o ROI foi positivo em 45 dias.\n\nA pergunta não é SE você deve adotar IA, mas QUANDO.\n\nE a resposta é: ontem.\n\n#InteligênciaArtificial #Produtividade #FuturoDoTrabalho #Inovação",
-      instagram:
-        "IA não é o futuro. É o presente. 🤖\n\nSe você ainda não está usando inteligência artificial no seu dia a dia, está literalmente deixando dinheiro na mesa.\n\nSwipe para ver as 5 ferramentas que mudaram meu jogo completamente →\n\n💡 Salva esse post pra consultar depois!\n\n#IA #InteligenciaArtificial #Tech #Produtividade #Ferramentas #DicasTech",
-    };
-    simulateTyping(sampleTexts[platform]);
+  const handleGenerate = async () => {
+    if (!content.trim()) return;
+
+    setIsGenerating(true);
+
+    // Call AI Agent
+    const result = await generateContent(content);
+
+    if (result.success && result.content) {
+      simulateTyping(result.content);
+    } else {
+      // Optional: Show error toast
+      console.error("AI Generation failed");
+      setIsGenerating(false);
+    }
   };
 
   const insertText = (before: string, after = "") => {

@@ -2,6 +2,7 @@
 "use client";
 
 import { VoiceAnalysisChart } from "@/components/dashboard/voice-analysis-chart";
+import { AIAnalyst } from "@/components/dashboard/ai-analyst";
 import { TrendingUp, Users, Eye, ArrowUp, Calendar } from "lucide-react";
 
 // Mock Data for a new chart (Bar Chart simulation using Tailwind)
@@ -87,7 +88,8 @@ export default function AnalyticsPage() {
 
                 {/* Voice Analysis Radar */}
                 {/* Voice Analysis Radar */}
-                <div className="h-full">
+                <div className="h-full space-y-6">
+                    <AIAnalyst />
                     <VoiceAnalysisChart />
                 </div>
             </div>
