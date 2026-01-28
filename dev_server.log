@@ -1,0 +1,25 @@
+
+> umbra-ai@0.1.0 dev /app
+> next dev
+
+▲ Next.js 16.1.5 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1184ms
+○ Compiling /login ...
+Missing env.NEXT_PUBLIC_SUPABASE_URL
+Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+⨯ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+    at module evaluation (src/lib/supabase.ts:14:37)
+    at module evaluation (src/app/login/page.tsx:5:1)
+  12 | }
+  13 |
+> 14 | export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+     |                                     ^
+  15 | {
+  digest: '3690663635'
+}
+ GET /login 500 in 7.7s (compile: 6.0s, render: 1730ms)
+[?25h
