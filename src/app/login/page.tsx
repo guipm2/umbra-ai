@@ -5,7 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, ArrowRight, Lock, Key, Mail } from "lucide-react";
+import { Loader2, ArrowRight, Lock, Key, Mail } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -75,8 +75,8 @@ export default function LoginPage() {
                     router.refresh(); // Ensure auth state updates
                 }
             }
-        } catch (error: any) {
-            setMessage(error.message || "Ocorreu um erro durante a autenticação.");
+        } catch (error: unknown) {
+            setMessage((error as Error).message || "Ocorreu um erro durante a autenticação.");
         } finally {
             setLoading(false);
         }
@@ -120,6 +120,10 @@ export default function LoginPage() {
                             >
                                 <div className="relative group mb-1">
                                     <input
+                                        id="name"
+                                        name="name"
+                                        autoComplete="name"
+                                        aria-label="Nome Completo"
                                         type="text"
                                         placeholder="Nome Completo"
                                         value={name}
@@ -134,6 +138,10 @@ export default function LoginPage() {
                     {/* Email: Always visible */}
                     <div className="relative group">
                         <input
+                            id="email"
+                            name="email"
+                            autoComplete="email"
+                            aria-label="Email"
                             type="email"
                             placeholder="seu@email.com"
                             value={email}
@@ -155,6 +163,10 @@ export default function LoginPage() {
                             >
                                 <div className="relative group pt-1">
                                     <input
+                                        id="password"
+                                        name="password"
+                                        autoComplete={isSignup ? "new-password" : "current-password"}
+                                        aria-label="Senha"
                                         type="password"
                                         placeholder="Senha Segura"
                                         value={password}
