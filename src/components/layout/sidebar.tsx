@@ -13,32 +13,78 @@ import {
   User,
   BarChart3,
   X,
+  Package,
+  Users,
+  UserCheck,
+  Megaphone,
+  Zap,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
 import { useAuth } from "@/components/auth/auth-context";
 
-const navItems = [
+const navGroups = [
   {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
+    title: "Estratégia",
+    items: [
+      {
+        label: "Produtos",
+        href: "/dashboard/products",
+        icon: Package,
+      },
+      {
+        label: "Públicos",
+        href: "/dashboard/audiences",
+        icon: Users,
+      },
+      {
+        label: "Especialistas",
+        href: "/dashboard/experts",
+        icon: UserCheck,
+      },
+    ]
   },
   {
-    label: "Ghostwriter",
-    href: "/dashboard/editor",
-    icon: PenTool,
+    title: "Criação",
+    items: [
+      {
+        label: "Copy Center",
+        href: "/dashboard/copy-center",
+        icon: Zap,
+      },
+      {
+        label: "Minhas Copys",
+        href: "/dashboard/my-copies", // Antigo "Brain" para outputs? Não, melhor manter separado
+        icon: Layers,
+      },
+      {
+        label: "Ghostwriter", // Legacy Editor
+        href: "/dashboard/editor",
+        icon: PenTool,
+      },
+    ]
   },
   {
-    label: "Brain",
-    href: "/dashboard/brain",
-    icon: BrainCircuit,
-  },
-  {
-    label: "Analytics",
-    href: "/dashboard/analytics",
-    icon: BarChart3,
-  },
+    title: "Gestão",
+    items: [
+      {
+        label: "Campanhas",
+        href: "/dashboard/campaigns",
+        icon: Megaphone,
+      },
+      {
+        label: "Brain (Arquivos)",
+        href: "/dashboard/brain",
+        icon: BrainCircuit,
+      },
+      {
+        label: "Analytics",
+        href: "/dashboard/analytics",
+        icon: BarChart3,
+      },
+    ]
+  }
 ];
 
 const bottomItems = [
@@ -79,32 +125,56 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4" role="navigation" aria-label="Menu principal">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-electric/15 text-neon neon-glow"
-                  : "text-muted-foreground hover:bg-glass-hover hover:text-foreground"
-              )}
-            >
-              <item.icon
-                className={cn(
-                  "h-5 w-5 shrink-0",
-                  isActive ? "text-neon" : "text-muted-foreground"
-                )}
-              />
-              {showLabels && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-6 px-3 py-4 overflow-y-auto custom-scrollbar" role="navigation" aria-label="Menu principal">
+        {/* Dashboard Home */}
+        <Link
+          href="/dashboard"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+            pathname === "/dashboard"
+              ? "bg-electric/15 text-neon neon-glow"
+              : "text-muted-foreground hover:bg-glass-hover hover:text-foreground"
+          )}
+        >
+          <LayoutDashboard className={cn("h-5 w-5 shrink-0", pathname === "/dashboard" ? "text-neon" : "text-muted-foreground")} />
+          {showLabels && <span>Dashboard</span>}
+        </Link>
+
+        {navGroups.map((group, idx) => (
+          <div key={idx} className="space-y-1">
+            {showLabels && (
+              <h4 className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-2">
+                {group.title}
+              </h4>
+            )}
+            {group.items.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-electric/15 text-neon neon-glow"
+                      : "text-muted-foreground hover:bg-glass-hover hover:text-foreground"
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5 shrink-0",
+                      isActive ? "text-neon" : "text-muted-foreground"
+                    )}
+                  />
+                  {showLabels && <span>{item.label}</span>}
+                </Link>
+              )
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Bottom section */}
