@@ -33,7 +33,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       mobileOpen,
       setMobileOpen,
     }),
-    [collapsed, mobileOpen, toggle]
+    [collapsed, mobileOpen, toggle, setCollapsed, setMobileOpen]
   );
 
   return (
