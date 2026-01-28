@@ -20,6 +20,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateContent } from "@/actions/ai";
+import ReactMarkdown from "react-markdown";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 
 const platformTemplates = {
   linkedin: {
@@ -132,12 +140,20 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
     }
   };
 
+
+  // Preview Logic
+  const [isExpanded, setIsExpanded] = useState(false);
+  const PREVIEW_LIMIT = 280;
+  const shouldTruncate = content.length > PREVIEW_LIMIT;
+  const displayContent = isExpanded || !shouldTruncate ? content : content.slice(0, PREVIEW_LIMIT) + "...";
+
   return (
     <div className="flex flex-col lg:flex-row h-full gap-6">
       {/* Editor */}
       <div className="flex-1 flex flex-col min-h-[500px]">
         {/* Toolbar */}
         <div className="glass rounded-t-2xl border-b border-border px-4 py-3">
+          {/* ... (toolbar content unchanged) ... */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* Platform selector */}
@@ -199,13 +215,25 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
               >
                 <AtSign className="h-4 w-4" />
               </button>
-              <button
-                onClick={() => insertText("😊")}
-                aria-label="Emoji"
-                className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              >
-                <Smile className="h-4 w-4" />
-              </button>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    aria-label="Emoji"
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <Smile className="h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full border-none p-0 bg-transparent shadow-none" sideOffset={5} align="start">
+                  <EmojiPicker
+                    theme={"dark" as any}
+                    onEmojiClick={(emojiData) => insertText(emojiData.emoji)}
+                    lazyLoadEmojis={true}
+                  />
+                </PopoverContent>
+              </Popover>
+
               <button
                 onClick={() => insertText("[imagem]")}
                 aria-label="Imagem"
@@ -225,28 +253,28 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
             onChange={(e) => !isGenerating && setContent(e.target.value)}
             placeholder="Comece a escrever ou peça para a IA gerar..."
             className={cn(
-              "h-full w-full resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none",
+              "h-full w-full resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none pb-16",
               isGenerating && "typing-cursor"
             )}
             readOnly={isGenerating}
           />
 
           {/* Bottom bar */}
-          <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
+          <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between bg-black/40 backdrop-blur-sm p-2 rounded-xl border border-white/5">
+            <span className="text-xs text-muted-foreground pl-2">
               {content.length} / {template.maxChars} caracteres
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setContent("")}
-                className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors hover:bg-white/10"
               >
                 <RotateCcw className="h-3 w-3" />
                 Limpar
               </button>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors hover:bg-white/10"
               >
                 {copied ? (
                   <Check className="h-3 w-3 text-green-400" />
@@ -280,7 +308,7 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
       {/* Social Preview */}
       {showPreview && (
         <div className="w-full lg:w-[380px] shrink-0 h-[400px] lg:h-auto">
-          <div className="glass rounded-2xl p-4 h-full">
+          <div className="glass rounded-2xl p-4 h-full overflow-y-auto custom-scrollbar">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Eye className="h-4 w-4 text-neon" />
@@ -314,13 +342,36 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
               </div>
 
               {/* Content */}
-              <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">
-                {content || (
+              <div className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line break-words">
+                {content ? (
+                  <ReactMarkdown
+                    components={{
+                      strong: ({ node, ...props }) => <span className="font-bold text-gray-100" {...props} />,
+                      em: ({ node, ...props }) => <span className="italic text-gray-300" {...props} />,
+                      a: ({ node, ...props }) => <a className="text-blue-400 hover:underline" {...props} />,
+                      ul: ({ node, ...props }) => <ul className="list-disc pl-4 space-y-1 my-2" {...props} />,
+                      ol: ({ node, ...props }) => <ol className="list-decimal pl-4 space-y-1 my-2" {...props} />,
+                      li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+                      p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />
+                    }}
+                  >
+                    {displayContent}
+                  </ReactMarkdown>
+                ) : (
                   <span className="text-muted-foreground/50 italic">
                     O conteúdo aparecerá aqui...
                   </span>
                 )}
-              </p>
+              </div>
+
+              {shouldTruncate && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="mt-2 text-xs text-electric hover:underline font-medium"
+                >
+                  {isExpanded ? "Ver menos" : "Ver mais"}
+                </button>
+              )}
 
               {/* Engagement mock */}
               <div className="mt-4 flex items-center gap-4 border-t border-border/30 pt-3">

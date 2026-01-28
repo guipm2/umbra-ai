@@ -15,7 +15,6 @@ def get_analytics_agent():
             "Provide concise summaries of your findings.",
         ],
         tools=[DuckDuckGoTools()],
-        show_tool_calls=True, # Helpful for debugging
         markdown=True,
     )
     return agent

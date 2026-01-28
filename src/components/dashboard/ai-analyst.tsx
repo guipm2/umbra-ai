@@ -26,9 +26,12 @@ export function AIAnalyst() {
     };
 
     const suggestions = [
-        "Quais as tendências de IA para 2025?",
-        "Melhores horários para postar no LinkedIn Tech",
-        "Analise o crescimento do TikTok vs Instagram"
+        "Quais as tendências de IA para 2026?",
+        "Melhores horários para postar nas redes",
+        "Analise o crescimento do TikTok vs Instagram",
+        "Veja o que está em alta hoje",
+        "Quais as melhores ferramentas de IA?",
+        "Como usar IA para criar conteúdos?"
     ];
 
     return (

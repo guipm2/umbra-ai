@@ -1,6 +1,6 @@
-from agno.knowledge.combined import CombinedKnowledgeBase
-from agno.vectordb.pgvector import PgVector2
-from agno.embedder.openai import OpenAIEmbedder
+from agno.knowledge import Knowledge as AgentKnowledge
+from agno.vectordb.pgvector import PgVector
+from agno.knowledge.embedder.openai import OpenAIEmbedder
 from dotenv import load_dotenv
 import os
 
@@ -17,14 +17,13 @@ def get_knowledge_base():
 
     try:
         # Configure PgVector storage (Supabase)
-        vector_db = PgVector2(
+        vector_db = PgVector(
             db_url=db_url,
             table_name="agent_knowledge",
             embedder=OpenAIEmbedder(id="text-embedding-3-small"),
         )
     
-        kb = CombinedKnowledgeBase(
-            sources=[],
+        kb = AgentKnowledge(
             vector_db=vector_db,
         )
         return kb

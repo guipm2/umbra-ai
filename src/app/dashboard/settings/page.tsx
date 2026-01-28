@@ -50,12 +50,20 @@ export default function SettingsPage() {
     });
 
     useEffect(() => {
-        async function fetchProfile() {
+        async function loadProfile() {
             try {
+                // 1. Try to load from Local Storage first (Instant Load)
+                const cachedProfile = localStorage.getItem('aura_user_profile');
+                if (cachedProfile) {
+                    setProfile(JSON.parse(cachedProfile));
+                    setLoading(false); // Stop loading immediately if we have cache
+                }
+
+                // 2. Fetch fresh data from Supabase (Background or First Load)
                 const { data: { user } } = await supabase.auth.getUser();
 
                 if (!user) {
-                    router.push('/login');
+                    if (!cachedProfile) router.push('/login');
                     return;
                 }
 
@@ -67,11 +75,16 @@ export default function SettingsPage() {
 
                 if (error) throw error;
 
-                setProfile({
+                const freshProfile = {
                     ...data,
                     email: user.email || "",
                     id: user.id
-                });
+                };
+
+                // 3. Update State and Cache
+                setProfile(freshProfile);
+                localStorage.setItem('aura_user_profile', JSON.stringify(freshProfile));
+
             } catch (error) {
                 console.error('Error fetching profile:', error);
             } finally {
@@ -79,8 +92,8 @@ export default function SettingsPage() {
             }
         }
 
-        fetchProfile();
-    }, [router]);
+        loadProfile();
+    }, []); // Empty dependency array to run only once
 
     const [uploading, setUploading] = useState(false);
 
@@ -133,7 +146,12 @@ export default function SettingsPage() {
 
             // Update Profile State automatically (User still needs to Click Save to persist to DB or we can auto-save)
             // Let's autosave the avatar specifically for better UX
-            setProfile(prev => ({ ...prev, avatar_url: data.publicUrl }));
+            // Update Local Storage
+            setProfile(prev => {
+                const newProfile = { ...prev, avatar_url: data.publicUrl };
+                localStorage.setItem('aura_user_profile', JSON.stringify(newProfile));
+                return newProfile;
+            });
 
             const { error: updateError } = await supabase
                 .from('profiles')
@@ -177,6 +195,9 @@ export default function SettingsPage() {
                 .eq('id', profile.id);
 
             if (error) throw error;
+
+            // Update Local Storage on Save
+            localStorage.setItem('aura_user_profile', JSON.stringify(profile));
 
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);

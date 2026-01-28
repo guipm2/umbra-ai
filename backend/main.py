@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from agents.content_agent import get_content_agent
 from agents.analytics_agent import get_analytics_agent
 from knowledge_base import get_knowledge_base
-from agno.document import Document
+from agno.knowledge.document import Document
 
 app = FastAPI(title="Aura AI Backend")
 
