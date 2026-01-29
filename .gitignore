@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude
+/.claude
+
+# jules
+/.Jules
+documentacao_fix_loading.md

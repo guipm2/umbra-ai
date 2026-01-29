@@ -5,41 +5,29 @@ import { Plus, Search, Megaphone, ArrowRight, Loader2, Calendar } from "lucide-r
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/auth-context";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 
 export default function CampaignsPage() {
     const { user } = useAuth();
-    const [campaigns, setCampaigns] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) loadCampaigns();
-    }, [user]);
-
-    async function loadCampaigns() {
-        // Cache First
-        const cached = localStorage.getItem('aura_campaigns');
-        if (cached) {
-            setCampaigns(JSON.parse(cached));
-            setLoading(false);
-        }
-
-        // Fetch Fresh
-        try {
+    // Unified Hook
+    const { data: campaigns = [], loading } = useCachedQuery({
+        key: 'aura_campaigns',
+        fetcher: async () => {
             const { data, error } = await supabase
                 .from('campaigns')
                 .select('*, products(name), audiences(name), experts(name)')
                 .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+        initialData: [],
+        enabled: !!user
+    });
 
-            if (data) {
-                setCampaigns(data);
-                localStorage.setItem('aura_campaigns', JSON.stringify(data));
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    // Removed manual state
+    // const [campaigns, setCampaigns] = useState<any[]>([]);
+    // const [loading, setLoading] = useState(true);
 
     return (
         <div className="space-y-8 max-w-6xl mx-auto p-8 animate-in fade-in">

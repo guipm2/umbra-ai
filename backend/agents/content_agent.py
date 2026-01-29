@@ -1,6 +1,6 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from agno.tools.duckduckgo import DuckDuckGo
+from agno.tools.duckduckgo import DuckDuckGoTools
 from knowledge_base import get_knowledge_base
 
 def get_content_agent(user_id: str = "default"):
@@ -21,7 +21,7 @@ def get_content_agent(user_id: str = "default"):
             "Return ONLY the generated content, ready to be inserted into the editor.",
             "Do not add conversational fluff like 'Here is the post:'. Just the content."
         ],
-        tools=[DuckDuckGo()],
+        tools=[DuckDuckGoTools()],
         knowledge=kb,
         search_knowledge=kb is not None, # Only enable if KB is valid
         markdown=True,

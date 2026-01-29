@@ -3,13 +3,24 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { Loader2, Zap, LayoutTemplate, Copy, Image as ImageIcon, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function StaticAdGeneratorPage() {
     const { user } = useAuth();
-    const [campaigns, setCampaigns] = useState<any[]>([]);
-    const [loadingCampaigns, setLoadingCampaigns] = useState(true);
+
+    // Unified Hook used for Campaign Selector
+    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery({
+        key: 'aura_campaigns', // Shared key! It will pick up cache from CampaignsPage if visited
+        fetcher: async () => {
+            const { data, error } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
+            if (error) throw error;
+            return data || [];
+        },
+        initialData: [],
+        enabled: !!user
+    });
 
     // State
     const [selectedCampaign, setSelectedCampaign] = useState("");
@@ -18,25 +29,7 @@ export default function StaticAdGeneratorPage() {
     const [generatedAd, setGeneratedAd] = useState<any>(null);
 
     // Cache-First Campaign Fetch
-    useEffect(() => {
-        if (user) {
-            const cached = localStorage.getItem('aura_campaigns');
-            if (cached) {
-                setCampaigns(JSON.parse(cached));
-                setLoadingCampaigns(false);
-            }
-            fetchCampaigns();
-        }
-    }, [user]);
-
-    async function fetchCampaigns() {
-        const { data } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
-        if (data) {
-            setCampaigns(data);
-            localStorage.setItem('aura_campaigns', JSON.stringify(data));
-        }
-        setLoadingCampaigns(false);
-    }
+    // useEffect(() => { ... }) <-- Removed, handled by hook
 
     const handleGenerate = async () => {
         if (!selectedCampaign || !offer) return;

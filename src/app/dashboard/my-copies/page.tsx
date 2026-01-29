@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/auth-context";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { supabase } from "@/lib/supabase";
 import {
     LayoutGrid,
@@ -32,13 +33,33 @@ type GeneratedContent = {
 };
 
 export default function MyCopiesPage() {
-    const { user } = useAuth();
-    const [copies, setCopies] = useState<GeneratedContent[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { user, loading: authLoading } = useAuth();
+    // State for UI (View, Filter, Search, Modal)
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [filter, setFilter] = useState<'all' | 'ugc' | 'static' | 'email' | 'message' | 'linkedin' | 'instagram'>('all');
     const [search, setSearch] = useState("");
     const [selectedCopy, setSelectedCopy] = useState<GeneratedContent | null>(null);
+
+    // Unified Hook with Dynamic Key based on Filter
+    const { data: copies = [], loading, refresh } = useCachedQuery({
+        key: filter === 'all' ? 'aura_my_copies' : `aura_my_copies_${filter}`,
+        fetcher: async () => {
+            let query = supabase
+                .from('generated_content')
+                .select('*, campaigns(name)')
+                .order('created_at', { ascending: false });
+
+            if (filter !== 'all') {
+                query = query.eq('type', filter);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            return data || [];
+        },
+        initialData: [],
+        enabled: !authLoading && !!user
+    });
 
     // CRUD
     const handleDelete = async (id: string) => {
@@ -51,66 +72,14 @@ export default function MyCopiesPage() {
                 console.error(error);
                 alert("Erro ao deletar.");
             } else {
-                setCopies(prev => prev.filter(c => c.id !== id));
+                // Refresh logic via hook
+                await refresh();
                 if (selectedCopy?.id === id) setSelectedCopy(null);
             }
         } catch (err) {
             console.error(err);
         }
     }
-
-    const getCopyText = (copy: GeneratedContent) => {
-        if (!copy.content) return "";
-
-        switch (copy.type) {
-            case 'ugc':
-                return `HOOK: ${copy.content.hook}\n\n` +
-                    (copy.content.scenes || []).map((s: any, i: number) => `CENA ${i + 1}\nVisual: ${s.visual}\nAudio: ${s.audio}`).join('\n\n');
-            case 'static':
-                return `HEADLINE: ${copy.content.headline}\n\nCORPO:\n${copy.content.body}\n\nVISUAL: ${copy.content.image_suggestion}`;
-            case 'email':
-                return `ASSUNTO: ${copy.content.subject_line}\nPREHEADER: ${copy.content.preheader}\n\nCORPO:\n${copy.content.body_content}\n\nCTA: ${copy.content.cta_button}`;
-            case 'message':
-                return (copy.content.variations || []).map((v: any) => `[${v.label}]\n${v.text}`).join('\n\n-------------------\n\n');
-            case 'linkedin':
-            case 'instagram':
-                return copy.content.text || "";
-            default:
-                return JSON.stringify(copy.content, null, 2);
-        }
-    };
-
-    useEffect(() => {
-        if (user) {
-            fetchCopies();
-        }
-    }, [user]);
-
-    async function fetchCopies() {
-        setLoading(true);
-        let query = supabase
-            .from('generated_content')
-            .select('*, campaigns(name)')
-            .order('created_at', { ascending: false });
-
-        if (filter !== 'all') {
-            query = query.eq('type', filter);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-            console.error(error);
-        } else {
-            setCopies(data || []);
-        }
-        setLoading(false);
-    }
-
-    // Refetch when filter changes
-    useEffect(() => {
-        if (user) fetchCopies();
-    }, [filter]);
 
     const filteredCopies = copies.filter(copy => {
         if (!search) return true;
@@ -258,6 +227,27 @@ export default function MyCopiesPage() {
         return <pre className="text-xs text-gray-500">{JSON.stringify(copy.content, null, 2)}</pre>;
     };
 
+
+    const getCopyText = (copy: GeneratedContent) => {
+        if (!copy.content) return "";
+
+        switch (copy.type) {
+            case 'ugc':
+                return `HOOK: ${copy.content.hook}\n\n` +
+                    (copy.content.scenes || []).map((s: any, i: number) => `CENA ${i + 1}\nVisual: ${s.visual}\nAudio: ${s.audio}`).join('\n\n');
+            case 'static':
+                return `HEADLINE: ${copy.content.headline}\n\nCORPO:\n${copy.content.body}\n\nVISUAL: ${copy.content.image_suggestion}`;
+            case 'email':
+                return `ASSUNTO: ${copy.content.subject_line}\nPREHEADER: ${copy.content.preheader}\n\nCORPO:\n${copy.content.body_content}\n\nCTA: ${copy.content.cta_button}`;
+            case 'message':
+                return (copy.content.variations || []).map((v: any) => `[${v.label}]\n${v.text}`).join('\n\n-------------------\n\n');
+            case 'linkedin':
+            case 'instagram':
+                return copy.content.text || "";
+            default:
+                return JSON.stringify(copy.content, null, 2);
+        }
+    };
 
     return (
         <div className="max-w-[1800px] mx-auto p-6 md:p-8 h-[calc(100vh-64px)] flex flex-col">

@@ -5,47 +5,50 @@ import { useState, useEffect } from "react";
 import { Upload, FileText, Sparkles, BrainCircuit, Trash2, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/auth-context";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 
 export default function BrainPage() {
     const { user } = useAuth();
-    // Using simple mock state for now as real Brain backend is in Phase 2, but adding Cache Pattern structure
+    // Unified Hook for Voice
+    const { data: voiceDescription, refresh: refreshVoice } = useCachedQuery<string>({
+        key: 'aura_brain_voice',
+        fetcher: async () => {
+            // Simulate Fetch (Placeholder for Phase 2 Integration)
+            await new Promise(r => setTimeout(r, 500));
+            return "Meu tom é profissional mas acessível...";
+        },
+        initialData: "",
+        enabled: !!user
+    });
 
-    const [voiceDescription, setVoiceDescription] = useState("");
-    const [files, setFiles] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        loadBrainData();
-    }, []);
-
-    const loadBrainData = async () => {
-        // 1. Cache
-        const cachedVoice = localStorage.getItem('aura_brain_voice');
-        if (cachedVoice) setVoiceDescription(cachedVoice);
-
-        const cachedFiles = localStorage.getItem('aura_brain_files');
-        if (cachedFiles) setFiles(JSON.parse(cachedFiles));
-
-        if (cachedVoice || cachedFiles) setLoading(false);
-
-        // 2. Simulate Fetch (Placeholder for Phase 2 Integration)
-        // In real impl: fetch from 'brain_config' table and 'storage.files'
-        setTimeout(() => {
-            if (!cachedVoice) setVoiceDescription("Meu tom é profissional mas acessível...");
-            if (!cachedFiles) setFiles([
+    // Unified Hook for Files
+    const { data: files = [], refresh: refreshFiles } = useCachedQuery<any[]>({
+        key: 'aura_brain_files',
+        fetcher: async () => {
+            // Simulate Fetch (Placeholder for Phase 2 Integration)
+            await new Promise(r => setTimeout(r, 500));
+            return [
                 { name: "Brand_Guidelines_2025.pdf", size: "2.4 MB", type: "PDF" },
                 { name: "Best_Posts_LinkedIn.docx", size: "145 KB", type: "DOC" },
-            ]);
-            setLoading(false);
-        }, 500);
-    };
+            ];
+        },
+        initialData: [],
+        enabled: !!user
+    });
 
-    const handleSaveVoice = () => {
+    const [localVoice, setLocalVoice] = useState("");
+
+    useEffect(() => {
+        if (voiceDescription) setLocalVoice(voiceDescription);
+    }, [voiceDescription]);
+
+    const handleSaveVoice = async () => {
         // Update Cache
-        localStorage.setItem('aura_brain_voice', voiceDescription);
+        localStorage.setItem('aura_brain_voice', localVoice);
 
         // TODO: Save to Supabase (Phase 2)
         // await supabase.from('profiles').update({ ... })
+        await refreshVoice();
         alert("Voz salva! (Localmente)");
     };
 
@@ -75,8 +78,8 @@ export default function BrainPage() {
                         </p>
                         <textarea
                             className="w-full h-48 bg-black/50 border border-white/10 rounded-xl p-4 text-sm text-gray-200 focus:outline-none focus:border-neon/50 transition-colors resize-none leading-relaxed"
-                            value={voiceDescription}
-                            onChange={(e) => setVoiceDescription(e.target.value)}
+                            value={localVoice}
+                            onChange={(e) => setLocalVoice(e.target.value)}
                             placeholder="Ex: Eu escrevo de forma direta, uso emojis com moderação..."
                         />
                         <div className="flex justify-end mt-4">

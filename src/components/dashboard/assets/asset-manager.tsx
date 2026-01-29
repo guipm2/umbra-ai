@@ -5,6 +5,7 @@ import { Plus, Search, Edit, Trash2, Loader2, ChevronRight, Box, Users, UserChec
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-context";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 
 interface AssetField {
     name: string;
@@ -24,8 +25,25 @@ interface AssetManagerProps {
 
 export function AssetManager({ title, description, tableName, icon: Icon, fields, renderCard }: AssetManagerProps) {
     const { user } = useAuth();
-    const [items, setItems] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Unified Hook
+    const { data: items = [], loading, refresh } = useCachedQuery({
+        key: `aura_assets_${tableName}`,
+        fetcher: async () => {
+            const { data, error } = await supabase
+                .from(tableName)
+                .select("*")
+                .order("created_at", { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+        initialData: [],
+        enabled: !!user
+    });
+
+    // We no longer need manual setItems or loadItems
+    // const [items, setItems] = useState<any[]>([]); <-- Removed
+    // const [loading, setLoading] = useState(true); <-- Removed
+
     const [searchTerm, setSearchTerm] = useState("");
     const [isCreating, setIsCreating] = useState(false);
     const [editingItem, setEditingItem] = useState<any | null>(null);
@@ -34,48 +52,7 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
-        if (user) {
-            loadItems();
-        }
-    }, [user, tableName]);
-
-    async function loadItems() {
-        // 1. Try Cache First
-        const cacheKey = `aura_assets_${tableName}`;
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-            setItems(JSON.parse(cached));
-            setLoading(false);
-        }
-
-        // 2. Fetch Fresh Data
-        await fetchItems(cacheKey);
-    }
-
-    async function fetchItems(cacheKey?: string) {
-        try {
-            if (!cacheKey) setLoading(true); // Only show spinner if no cache key (meaning explicit refresh or first load without cache)
-
-            const { data, error } = await supabase
-                .from(tableName)
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
-
-            const freshData = data || [];
-            setItems(freshData);
-
-            // 3. Update Cache
-            localStorage.setItem(cacheKey || `aura_assets_${tableName}`, JSON.stringify(freshData));
-
-        } catch (error) {
-            console.error(`Error fetching ${tableName}:`, error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    // useEffect for loading is handled by the hook
 
     async function handleSave() {
         if (!user) return;
@@ -107,9 +84,8 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
                 if (error) throw error;
             }
 
-            // Update Cache Immediately
-            const cacheKey = `aura_assets_${tableName}`;
-            await fetchItems(cacheKey); // Re-fetch to be safe and update cache
+            // Refresh Data
+            await refresh();
 
             setIsCreating(false);
             setEditingItem(null);
@@ -128,10 +104,8 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
             const { error } = await supabase.from(tableName).delete().eq("id", id);
             if (error) throw error;
 
-            // Update State & Cache
-            const newItems = items.filter(i => i.id !== id);
-            setItems(newItems);
-            localStorage.setItem(`aura_assets_${tableName}`, JSON.stringify(newItems));
+            // Refresh Data
+            await refresh();
 
         } catch (error) {
             console.error(error);
