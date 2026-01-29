@@ -1,5 +1,6 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
+from agno.tools.duckduckgo import DuckDuckGo
 from knowledge_base import get_knowledge_base
 
 def get_content_agent(user_id: str = "default"):
@@ -16,11 +17,14 @@ def get_content_agent(user_id: str = "default"):
             "Your goal is to generate high-quality text based on user requests.",
             "You MUST adapt your writing style to the User's Voice found in the knowledge base.",
             "If you find context in the knowledge base, prioritize it.",
+            "Use the DuckDuckGo tool to search for real-time information if the user mentions specific recent events or facts you don't know.",
             "Return ONLY the generated content, ready to be inserted into the editor.",
             "Do not add conversational fluff like 'Here is the post:'. Just the content."
         ],
+        tools=[DuckDuckGo()],
         knowledge=kb,
         search_knowledge=kb is not None, # Only enable if KB is valid
         markdown=True,
+        show_tool_calls=True,
     )
     return agent

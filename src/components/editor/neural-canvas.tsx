@@ -17,7 +17,11 @@ import {
   Instagram,
   Eye,
   Wand2,
+  Save,
+  Loader2,
 } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-context";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { generateContent } from "@/actions/ai";
 import ReactMarkdown from "react-markdown";
@@ -58,6 +62,8 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [copied, setCopied] = useState(false);
+  const { user } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -68,6 +74,11 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+
+  // Update platform when prop changes (URL navigation)
+  useEffect(() => {
+    setPlatform(initialPlatform);
+  }, [initialPlatform]);
 
   const simulateTyping = useCallback((text: string) => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -137,6 +148,35 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
       document.body.removeChild(textarea);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!content.trim() || !user) return;
+    setIsSaving(true);
+
+    // Create a title based on the first few words
+    const title = content.split(' ').slice(0, 5).join(' ') + '...';
+
+    try {
+      const { error } = await supabase.from('generated_content').insert({
+        user_id: user.id,
+        type: platform, // 'linkedin' | 'instagram'
+        title: title || `Post ${platformTemplates[platform].label}`,
+        content: {
+          text: content,
+          platform: platform,
+          date: new Date().toISOString()
+        }
+      });
+
+      if (error) throw error;
+      alert("Texto salvo na biblioteca!");
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao salvar texto.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -265,6 +305,14 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
               {content.length} / {template.maxChars} caracteres
             </span>
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleSave}
+                disabled={isSaving || !content.trim()}
+                className="flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors hover:bg-white/10"
+              >
+                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                {isSaving ? "Salvando..." : "Salvar"}
+              </button>
               <button
                 onClick={() => setContent("")}
                 className="flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors hover:bg-white/10"

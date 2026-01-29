@@ -3,3 +3,8 @@ uvicorn
 agno
 python-dotenv
 openai
+sqlalchemy
+psycopg2-binary
+pgvector
+duckduckgo-search
+

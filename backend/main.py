@@ -89,13 +89,62 @@ def generate_ugc(request: UGCRequest):
         response = agent.run(prompt)
         
         # Parse JSON from response
-        # The agent is instructed to return JSON, but we clean it just in case
         content_str = response.content.replace('```json', '').replace('```', '').strip()
         script_json = json.loads(content_str)
         
         return script_json
     except Exception as e:
         print(f"UGC Agent Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- New Agents ---
+
+from agents.static_ad_agent import get_static_ad_agent
+from agents.email_agent import get_email_agent
+from agents.message_agent import get_message_agent
+
+class StaticAdRequest(BaseModel):
+    product_name: str
+    audience_name: str
+    offer: str
+
+class EmailRequest(BaseModel):
+    product_name: str
+    audience_name: str
+    objective: str
+
+class MessageRequest(BaseModel):
+    context: str
+    tone: str
+
+@app.post("/api/static-ad")
+def generate_static_ad(request: StaticAdRequest):
+    try:
+        agent = get_static_ad_agent()
+        prompt = f"Product: {request.product_name}\nAudience: {request.audience_name}\nOffer/Goal: {request.offer}"
+        response = agent.run(prompt)
+        return json.loads(response.content.replace('```json', '').replace('```', '').strip())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/email")
+def generate_email(request: EmailRequest):
+    try:
+        agent = get_email_agent()
+        prompt = f"Product: {request.product_name}\nAudience: {request.audience_name}\nObjective: {request.objective}"
+        response = agent.run(prompt)
+        return json.loads(response.content.replace('```json', '').replace('```', '').strip())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/message")
+def generate_message(request: MessageRequest):
+    try:
+        agent = get_message_agent()
+        prompt = f"Context: {request.context}\nTone: {request.tone}"
+        response = agent.run(prompt)
+        return json.loads(response.content.replace('```json', '').replace('```', '').strip())
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/brain/upload")

@@ -87,8 +87,32 @@ export default function UGCGeneratorPage() {
         } catch (error) {
             console.error(error);
             alert("Erro ao gerar roteiro. Verifique se o Backend está rodando.");
-        } finally {
             setIsGenerating(false);
+        }
+    };
+
+    // Save Logic
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSave = async () => {
+        if (!generatedScript || !user || !selectedCampaign) return;
+        setIsSaving(true);
+        try {
+            const { error } = await supabase.from('generated_content').insert({
+                user_id: user.id,
+                campaign_id: selectedCampaign,
+                type: 'ugc',
+                title: generatedScript.title || 'Roteiro UGC',
+                content: generatedScript
+            });
+
+            if (error) throw error;
+            alert("Salvo com sucesso!");
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao salvar.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -225,8 +249,13 @@ export default function UGCGeneratorPage() {
                                 <button className="px-4 py-2 rounded-lg border border-white/10 text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
                                     Regerar (Tentar Outro)
                                 </button>
-                                <button className="px-4 py-2 rounded-lg bg-electric text-white text-xs font-medium hover:bg-electric/80 transition-colors shadow-lg shadow-electric/20">
-                                    Salvar na Biblioteca
+                                <button
+                                    onClick={handleSave}
+                                    disabled={isSaving}
+                                    className="px-4 py-2 rounded-lg bg-electric text-white text-xs font-medium hover:bg-electric/80 transition-colors shadow-lg shadow-electric/20 flex items-center gap-2"
+                                >
+                                    {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                                    {isSaving ? "Salvando..." : "Salvar na Biblioteca"}
                                 </button>
                             </div>
                         </div>
