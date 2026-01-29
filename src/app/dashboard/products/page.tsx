@@ -1,7 +1,12 @@
 "use client";
 
-import { AssetManager } from "@/components/dashboard/assets/asset-manager";
+import dynamic from "next/dynamic";
 import { Package } from "lucide-react";
+
+const AssetManager = dynamic(
+    () => import("@/components/dashboard/assets/asset-manager").then((mod) => mod.AssetManager),
+    { ssr: false }
+);
 
 export default function ProductsPage() {
     return (

@@ -1,9 +1,18 @@
-
 "use client";
 
-import { VoiceAnalysisChart } from "@/components/dashboard/voice-analysis-chart";
-import { AIAnalyst } from "@/components/dashboard/ai-analyst";
+import dynamic from "next/dynamic";
 import { TrendingUp, Users, Eye, ArrowUp, Calendar } from "lucide-react";
+
+// Dynamically import components to avoid SSR build errors
+const VoiceAnalysisChart = dynamic(
+    () => import("@/components/dashboard/voice-analysis-chart").then((mod) => mod.VoiceAnalysisChart),
+    { ssr: false }
+);
+
+const AIAnalyst = dynamic(
+    () => import("@/components/dashboard/ai-analyst").then((mod) => mod.AIAnalyst),
+    { ssr: false }
+);
 
 // Mock Data for a new chart (Bar Chart simulation using Tailwind)
 function EngagementChart() {
@@ -86,7 +95,6 @@ export default function AnalyticsPage() {
                     <EngagementChart />
                 </div>
 
-                {/* Voice Analysis Radar */}
                 {/* Voice Analysis Radar */}
                 <div className="h-full space-y-6">
                     <AIAnalyst />

@@ -1,8 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Menu, Sparkles } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
+// import { Sidebar } from "@/components/layout/sidebar";
 import { AiChatbox } from "@/components/chat/ai-chatbox";
+
+const Sidebar = dynamic(
+  () => import("@/components/layout/sidebar").then((mod) => mod.Sidebar),
+  { ssr: false }
+);
 import { ErrorBoundary } from "@/components/error-boundary";
 import {
   SidebarProvider,
