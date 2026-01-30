@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Smartphone, Video, Sparkles, ChevronRight, Copy, Check, PlayCircle } from "lucide-react";
@@ -14,13 +15,16 @@ const VIDEO_STYLES = [
     { id: 'tutorial', icon: PlayCircle, title: "Tutorial Rápido", description: "Passo a passo 'How-to' resolvendo um problema específico.", color: "text-green-400", bg: "bg-green-400/10" },
 ];
 
-export default function UGCGeneratorPage() {
+function UGCGeneratorContent() {
     const { user } = useAuth();
+    const searchParams = useSearchParams();
+    const preSelectedCampaignId = searchParams.get("campaignId");
+
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [loadingCampaigns, setLoadingCampaigns] = useState(true);
 
     // State
-    const [selectedCampaign, setSelectedCampaign] = useState("");
+    const [selectedCampaign, setSelectedCampaign] = useState(preSelectedCampaignId || "");
     const [selectedStyle, setSelectedStyle] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedScript, setGeneratedScript] = useState<any>(null);
@@ -36,6 +40,13 @@ export default function UGCGeneratorPage() {
             fetchCampaigns();
         }
     }, [user]);
+
+    // Update selected campaign if URL param changes
+    useEffect(() => {
+        if (preSelectedCampaignId) {
+            setSelectedCampaign(preSelectedCampaignId);
+        }
+    }, [preSelectedCampaignId]);
 
     async function fetchCampaigns() {
         // Silent update
@@ -275,4 +286,12 @@ export default function UGCGeneratorPage() {
             </div>
         </div>
     );
+}
+
+export default function UGCGeneratorPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-neon" /></div>}>
+            <UGCGeneratorContent />
+        </Suspense>
+    )
 }

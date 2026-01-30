@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { Loader2, MessageSquare, Copy, Check, Send } from "lucide-react";
 
-export default function MessagesGeneratorPage() {
+function MessagesGeneratorContent() {
     const { user } = useAuth();
+    const searchParams = useSearchParams();
+    const campaignId = searchParams.get("campaignId");
 
     // State
     const [context, setContext] = useState("");
@@ -14,6 +17,39 @@ export default function MessagesGeneratorPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedMessages, setGeneratedMessages] = useState<any>(null);
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+    const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
+
+    // Pre-fill context if campaignId is present
+    useEffect(() => {
+        if (campaignId && user) {
+            fetchCampaignDetails();
+        }
+    }, [campaignId, user]);
+
+    async function fetchCampaignDetails() {
+        setIsLoadingCampaign(true);
+        try {
+            const { data: campaign } = await supabase
+                .from('campaigns')
+                .select('*, products(name, description), audiences(name, pain_points)')
+                .eq('id', campaignId)
+                .single();
+
+            if (campaign) {
+                const prefill = `Campanha: ${campaign.name}
+Produto: ${campaign.products?.name}
+Público: ${campaign.audiences?.name} (${campaign.audiences?.pain_points})
+Objetivo: ${campaign.objective}
+
+Crie mensagens para...`; // Prompt starter
+                setContext(prefill);
+            }
+        } catch (error) {
+            console.error("Error fetching campaign details", error);
+        } finally {
+            setIsLoadingCampaign(false);
+        }
+    }
 
     const handleGenerate = async () => {
         if (!context) return;
@@ -51,18 +87,13 @@ export default function MessagesGeneratorPage() {
     // Save Logic
     const [isSaving, setIsSaving] = useState(false);
 
-    // In messages page, we don't select a campaign, so we might save without campaign_id or use context
-    // For consistency, we'll try to use a default or null campaign if not applicable.
-    // However, the Messages page DOES NOT have campaign selector currently.
-    // We will save with null campaign_id.
-
     const handleSave = async () => {
         if (!generatedMessages || !user) return;
         setIsSaving(true);
         try {
             const { error } = await supabase.from('generated_content').insert({
                 user_id: user.id,
-                campaign_id: null, // Messages tool is standalone in this version
+                campaign_id: campaignId || null, // Link to campaign if present
                 type: 'message',
                 title: context.slice(0, 50) + '...',
                 content: generatedMessages
@@ -95,12 +126,15 @@ export default function MessagesGeneratorPage() {
                 <div className="w-full xl:w-[400px] shrink-0 space-y-6">
                     {/* Context Input */}
                     <div className="glass p-6 rounded-2xl border border-white/5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 block">1. Contexto e Objetivo</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex justify-between">
+                            1. Contexto e Objetivo
+                            {isLoadingCampaign && <Loader2 className="h-3 w-3 animate-spin" />}
+                        </label>
                         <textarea
                             value={context}
                             onChange={(e) => setContext(e.target.value)}
                             placeholder="Ex: Cliente parou de responder após eu enviar o orçamento. Quero reativar a conversa sem parecer chato."
-                            className="w-full h-40 bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-yellow-400/50 resize-none"
+                            className="w-full h-64 bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-yellow-400/50 resize-none"
                         />
                     </div>
 
@@ -202,4 +236,12 @@ export default function MessagesGeneratorPage() {
             </div>
         </div>
     );
+}
+
+export default function MessagesGeneratorPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-neon" /></div>}>
+            <MessagesGeneratorContent />
+        </Suspense>
+    )
 }

@@ -58,5 +58,5 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true }:
 
     }, [key, user, enabled, refresh]);
 
-    return { data, loading, error, refresh };
+    return { data, loading, error, refresh, setData };
 }

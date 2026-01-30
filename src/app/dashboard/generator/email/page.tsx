@@ -1,18 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Mail, Send, Copy, ChevronRight, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
-export default function EmailGeneratorPage() {
+function EmailGeneratorContent() {
     const { user } = useAuth();
+    const searchParams = useSearchParams();
+    const preSelectedCampaignId = searchParams.get("campaignId");
+
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [loadingCampaigns, setLoadingCampaigns] = useState(true);
 
     // State
-    const [selectedCampaign, setSelectedCampaign] = useState("");
+    const [selectedCampaign, setSelectedCampaign] = useState(preSelectedCampaignId || "");
     const [objective, setObjective] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedEmail, setGeneratedEmail] = useState<any>(null);
@@ -28,6 +32,13 @@ export default function EmailGeneratorPage() {
             fetchCampaigns();
         }
     }, [user]);
+
+    // Update selected campaign if URL param changes
+    useEffect(() => {
+        if (preSelectedCampaignId) {
+            setSelectedCampaign(preSelectedCampaignId);
+        }
+    }, [preSelectedCampaignId]);
 
     async function fetchCampaigns() {
         const { data } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
@@ -158,7 +169,7 @@ export default function EmailGeneratorPage() {
                         {isGenerating ? (
                             <div className="flex items-center justify-center gap-2">
                                 <Loader2 className="h-5 w-5 animate-spin" />
-                                Escrevendo E-mail...
+                                writing...
                             </div>
                         ) : (
                             <div className="flex items-center justify-center gap-2">
@@ -245,4 +256,12 @@ export default function EmailGeneratorPage() {
             </div>
         </div>
     );
+}
+
+export default function EmailGeneratorPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-neon" /></div>}>
+            <EmailGeneratorContent />
+        </Suspense>
+    )
 }

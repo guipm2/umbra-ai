@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { Loader2, Zap, LayoutTemplate, Copy, Image as ImageIcon, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
-export default function StaticAdGeneratorPage() {
+function StaticAdGeneratorContent() {
     const { user } = useAuth();
+    const searchParams = useSearchParams();
+    const preSelectedCampaignId = searchParams.get("campaignId");
 
     // Unified Hook used for Campaign Selector
     const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery({
@@ -23,13 +26,17 @@ export default function StaticAdGeneratorPage() {
     });
 
     // State
-    const [selectedCampaign, setSelectedCampaign] = useState("");
+    const [selectedCampaign, setSelectedCampaign] = useState(preSelectedCampaignId || "");
     const [offer, setOffer] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedAd, setGeneratedAd] = useState<any>(null);
 
-    // Cache-First Campaign Fetch
-    // useEffect(() => { ... }) <-- Removed, handled by hook
+    // Update selected campaign if URL param changes
+    useEffect(() => {
+        if (preSelectedCampaignId) {
+            setSelectedCampaign(preSelectedCampaignId);
+        }
+    }, [preSelectedCampaignId]);
 
     const handleGenerate = async () => {
         if (!selectedCampaign || !offer) return;
@@ -238,4 +245,12 @@ export default function StaticAdGeneratorPage() {
             </div>
         </div>
     );
+}
+
+export default function StaticAdGeneratorPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-neon" /></div>}>
+            <StaticAdGeneratorContent />
+        </Suspense>
+    )
 }

@@ -7,4 +7,6 @@ sqlalchemy
 psycopg2-binary
 pgvector
 duckduckgo-search
-
+pypdf
+python-docx
+python-multipart

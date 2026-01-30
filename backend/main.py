@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agents.content_agent import get_content_agent
@@ -147,21 +147,31 @@ def generate_message(request: MessageRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from agents.brain_agent import get_brain_agent, process_document
+
+class BrainQueryRequest(BaseModel):
+    query: str
+    user_id: str = "default"
+
 @app.post("/api/brain/upload")
-def upload_knowledge(request: DocumentRequest):
-    """
-    Endpoint to ingest text directly into the Knowledge Base.
-    """
+async def upload_knowledge(file: UploadFile): # Removed metadata/DocumentRequest dependency for simplicity
     try:
-        kb = get_knowledge_base()
-        if not kb:
-            raise HTTPException(status_code=500, detail="Knowledge Base not configured")
-        
-        # Create a document and load it
-        doc = Document(content=request.content, meta_data=request.metadata)
-        kb.load_documents([doc], split=True)
-        
-        return {"status": "success", "message": "Document ingested into Brain"}
+        # TODO: Get user_id from auth token (future task)
+        result = await process_document(file, user_id="default")
+        return result
     except Exception as e:
         print(f"Ingestion Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/brain/query")
+def query_brain(request: BrainQueryRequest):
+    try:
+        agent = get_brain_agent()
+        if not agent:
+             return {"response": "Knowledge Base not configured."}
+             
+        response = agent.run(request.query)
+        return {"response": response.content}
+    except Exception as e:
+         print(f"Brain Query Error: {e}")
+         raise HTTPException(status_code=500, detail=str(e))

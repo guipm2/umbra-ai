@@ -1,14 +1,17 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { Upload, FileText, Sparkles, BrainCircuit, Trash2, Plus } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Upload, FileText, Sparkles, BrainCircuit, Trash2, Plus, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 
 export default function BrainPage() {
     const { user } = useAuth();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+
     // Unified Hook for Voice
     const { data: voiceDescription, refresh: refreshVoice } = useCachedQuery<string>({
         key: 'aura_brain_voice',
@@ -22,7 +25,7 @@ export default function BrainPage() {
     });
 
     // Unified Hook for Files
-    const { data: files = [], refresh: refreshFiles } = useCachedQuery<any[]>({
+    const { data: files = [], refresh: refreshFiles, setData: setFiles } = useCachedQuery<any[]>({
         key: 'aura_brain_files',
         fetcher: async () => {
             // Simulate Fetch (Placeholder for Phase 2 Integration)
@@ -45,16 +48,54 @@ export default function BrainPage() {
     const handleSaveVoice = async () => {
         // Update Cache
         localStorage.setItem('aura_brain_voice', localVoice);
-
-        // TODO: Save to Supabase (Phase 2)
-        // await supabase.from('profiles').update({ ... })
         await refreshVoice();
         alert("Voz salva! (Localmente)");
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("http://localhost:8000/api/brain/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error("Falha no upload");
+
+            const result = await response.json();
+            if (result.status === "error") throw new Error(result.message);
+
+            // Add to local list for immediate feedback
+            const newFile = {
+                name: file.name,
+                size: (file.size / 1024 / 1024).toFixed(2) + " MB",
+                type: file.name.split('.').pop()?.toUpperCase() || "FILE"
+            };
+
+            // Update cache/state
+            const currentFiles = files || [];
+            setFiles([newFile, ...currentFiles]);
+
+            alert(`Arquivo processado com sucesso: ${result.message}`);
+
+        } catch (error: any) {
+            console.error(error);
+            alert(`Erro ao enviar arquivo: ${error.message}`);
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
-            {/* Same UI Structure... */}
+            {/* Header */}
             <div className="flex items-center gap-3 mb-8">
                 <div className="h-10 w-10 rounded-xl bg-electric/20 flex items-center justify-center">
                     <BrainCircuit className="h-6 w-6 text-neon" />
@@ -66,7 +107,7 @@ export default function BrainPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Simplified for brevity in tool call... */}
+                {/* Voice Section */}
                 <div className="space-y-6">
                     <section className="glass p-6 rounded-2xl border border-white/5">
                         <div className="flex items-center gap-2 mb-4 text-neon">
@@ -90,6 +131,7 @@ export default function BrainPage() {
                     </section>
                 </div>
 
+                {/* Knowledge Base Section */}
                 <div className="space-y-6">
                     <section className="glass p-6 rounded-2xl border border-white/5 h-full flex flex-col">
                         <div className="flex items-center justify-between mb-6">
@@ -99,8 +141,34 @@ export default function BrainPage() {
                             </div>
                             <span className="text-xs text-gray-500">{files.length} arquivos</span>
                         </div>
-                        {/* Static list rendering for now, waiting for Phase 2 */}
-                        <div className="flex-1 space-y-3">
+
+                        {/* Upload Area */}
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-neon/30 hover:bg-white/5 transition-all mb-6 group"
+                        >
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                onChange={handleFileUpload}
+                                accept=".pdf,.doc,.docx,.txt,.md"
+                            />
+                            <div className="h-10 w-10 rounded-full bg-white/5 group-hover:bg-neon/10 flex items-center justify-center mb-3 transition-colors">
+                                {uploading ? (
+                                    <Loader2 className="h-5 w-5 text-neon animate-spin" />
+                                ) : (
+                                    <Upload className="h-5 w-5 text-gray-400 group-hover:text-neon" />
+                                )}
+                            </div>
+                            <p className="text-sm font-medium text-white group-hover:text-neon transition-colors">
+                                {uploading ? "Processando..." : "Clique para fazer upload"}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">PDF, DOCX, TXT (Max 10MB)</p>
+                        </div>
+
+                        {/* Files List */}
+                        <div className="flex-1 space-y-3 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
                             {files.map((file, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 group hover:border-white/10 transition-colors">
                                     <div className="flex items-center gap-3">
@@ -108,7 +176,7 @@ export default function BrainPage() {
                                             <FileText className="h-4 w-4" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-200">{file.name}</p>
+                                            <p className="text-sm font-medium text-gray-200 truncate max-w-[200px]">{file.name}</p>
                                             <p className="text-[10px] text-gray-500 uppercase">{file.type} • {file.size}</p>
                                         </div>
                                     </div>
