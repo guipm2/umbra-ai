@@ -226,12 +226,94 @@ OPENAI_API_KEY=sua_chave_openai
 
 ### Banco de Dados (Supabase)
 
-Execute as migrations SQL no Supabase para criar as tabelas:
+O projeto utiliza o Supabase com PostgreSQL 17.6. Abaixo está o esquema completo das tabelas:
 
-- `profiles` - Perfis de usuários
-- `products` - Produtos cadastrados
-- `audiences` - Públicos-alvo
-- `experts` - Especialistas/Personas
+#### Tabela `profiles` (Perfis de Usuários)
+- **RLS:** Habilitado
+- **Colunas principais:**
+  - `id` (uuid, PK) → FK para `auth.users.id`
+  - `username` (text, unique, min 3 chars)
+  - `full_name` (text)
+  - `avatar_url` (text)
+  - `website` (text)
+  - `subscription_tier` (text, default: 'starter')
+  - `cpf_cnpj` (text)
+  - `birth_date` (date)
+  - `phone` (text)
+  - `address_*` (text) - CEP, rua, número, complemento, bairro, cidade, estado
+  - `bio` (text)
+  - `updated_at` (timestamptz)
+
+#### Tabela `products` (Produtos/Serviços)
+- **RLS:** Habilitado
+- **Colunas principais:**
+  - `id` (uuid, PK)
+  - `user_id` (uuid) → FK para `auth.users.id`
+  - `name` (text, obrigatório)
+  - `type` (text) - Tipo do produto
+  - `description` (text)
+  - `target_audience` (text)
+  - `unique_selling_points` (jsonb)
+  - `price_range` (text)
+  - `created_at` (timestamptz)
+
+#### Tabela `experts` (Especialistas/Personas)
+- **RLS:** Habilitado
+- **Colunas principais:**
+  - `id` (uuid, PK)
+  - `user_id` (uuid) → FK para `auth.users.id`
+  - `name` (text, obrigatório)
+  - `occupation` (text)
+  - `bio` (text)
+  - `archetype` (text)
+  - `tone_of_voice` (text)
+  - `writing_style` (text)
+  - `expertise_areas` (jsonb)
+  - `avatar_url` (text)
+  - `created_at` (timestamptz)
+
+#### Tabela `audiences` (Públicos-Alvo)
+- **RLS:** Habilitado
+- **Colunas principais:**
+  - `id` (uuid, PK)
+  - `user_id` (uuid) → FK para `auth.users.id`
+  - `name` (text, obrigatório)
+  - `demographics` (jsonb)
+  - `interests` (jsonb)
+  - `pain_points` (jsonb)
+  - `aspirations` (jsonb)
+  - `platforms` (jsonb)
+  - `created_at` (timestamptz)
+
+#### Tabela `campaigns` (Campanhas)
+- **RLS:** Habilitado
+- **Colunas principais:**
+  - `id` (uuid, PK)
+  - `user_id` (uuid) → FK para `auth.users.id`
+  - `name` (text, obrigatório)
+  - `product_id` (uuid) → FK para `products.id`
+  - `audience_id` (uuid) → FK para `audiences.id`
+  - `expert_id` (uuid) → FK para `experts.id`
+  - `objective` (text)
+  - `status` (text, default: 'active')
+  - `created_at` (timestamptz)
+
+#### Tabela `generated_content` (Conteúdo Gerado)
+- **RLS:** Habilitado
+- **Colunas principais:**
+  - `id` (uuid, PK)
+  - `user_id` (uuid) → FK para `auth.users.id`
+  - `campaign_id` (uuid, nullable) → FK para `campaigns.id`
+  - `type` (text) - Tipo de conteúdo (post, email, ugc, etc.)
+  - `title` (text)
+  - `content` (jsonb) - Conteúdo estruturado
+  - `created_at` (timestamptz)
+
+**Observações:**
+- Todas as tabelas possuem RLS (Row Level Security) habilitado
+- O projeto está na região `us-west-2`
+- PostgreSQL versão: `17.6.1.063`
+- Status: `ACTIVE_HEALTHY`
 
 ### Variáveis de Ambiente
 
