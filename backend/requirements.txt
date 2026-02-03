@@ -10,3 +10,6 @@ duckduckgo-search
 pypdf
 python-docx
 python-multipart
+ddgs
+python-dotenv
+

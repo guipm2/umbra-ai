@@ -28,7 +28,7 @@ export default function ExpertsPage() {
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-electric to-neon flex items-center justify-center shrink-0">
                             <span className="font-bold text-white">{item.name?.[0]}</span>
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                             <h3 className="font-semibold text-white truncate pr-6 leading-tight">{item.name}</h3>
                             <p className="text-xs text-neon mt-0.5">{item.instagram_handle}</p>
                             <div className="mt-3 flex gap-2">

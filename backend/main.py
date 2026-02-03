@@ -6,9 +6,10 @@ from agents.analytics_agent import get_analytics_agent
 from agents.ugc_agent import get_ugc_agent
 from knowledge_base import get_knowledge_base
 from agno.knowledge.document import Document
+from agent import get_agent
 import json
 
-app = FastAPI(title="Aura AI Backend")
+app = FastAPI(title="Umbra AI Backend")
 
 # Configure CORS
 app.add_middleware(
@@ -37,7 +38,7 @@ class DocumentRequest(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "Aura AI Backend is running with Multi-Agent Support"}
+    return {"message": "Backend da Umbra AI online"}
 
 @app.get("/health")
 def health_check():
@@ -54,7 +55,7 @@ def generate_content(request: AgentRequest):
         response = agent.run(request.message)
         return {"response": response.content}
     except Exception as e:
-        print(f"Content Agent Error: {e}")
+        print(f"Erro no agente de conteúdo: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/analytics")
@@ -67,7 +68,7 @@ def analyze_data(request: AgentRequest):
         response = agent.run(request.message)
         return {"response": response.content}
     except Exception as e:
-        print(f"Analytics Agent Error: {e}")
+        print(f"Erro no agente de análise: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ugc")
@@ -79,11 +80,11 @@ def generate_ugc(request: UGCRequest):
         agent = get_ugc_agent()
         
         prompt = f"""
-        Create a viral UGC video script.
-        Product: {request.product_name}
-        Target Audience: {request.audience_name}
-        Brand Persona/Expert: {request.expert_name}
-        Video Style: {request.style}
+        Crie um roteiro de vídeo viral UGC.
+        Produto: {request.product_name}
+        Público Alvo: {request.audience_name}
+        Persona da Marca/Especialista: {request.expert_name}
+        Estilo do Vídeo: {request.style}
         """
         
         response = agent.run(prompt)
@@ -94,7 +95,7 @@ def generate_ugc(request: UGCRequest):
         
         return script_json
     except Exception as e:
-        print(f"UGC Agent Error: {e}")
+        print(f"Erro no Agente de UGC: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- New Agents ---
@@ -121,7 +122,7 @@ class MessageRequest(BaseModel):
 def generate_static_ad(request: StaticAdRequest):
     try:
         agent = get_static_ad_agent()
-        prompt = f"Product: {request.product_name}\nAudience: {request.audience_name}\nOffer/Goal: {request.offer}"
+        prompt = f"Produto: {request.product_name}\nPúblico: {request.audience_name}\nOferta/Objetivo: {request.offer}"
         response = agent.run(prompt)
         return json.loads(response.content.replace('```json', '').replace('```', '').strip())
     except Exception as e:
@@ -131,7 +132,7 @@ def generate_static_ad(request: StaticAdRequest):
 def generate_email(request: EmailRequest):
     try:
         agent = get_email_agent()
-        prompt = f"Product: {request.product_name}\nAudience: {request.audience_name}\nObjective: {request.objective}"
+        prompt = f"Produto: {request.product_name}\nPúblico: {request.audience_name}\nObjetivo: {request.objective}"
         response = agent.run(prompt)
         return json.loads(response.content.replace('```json', '').replace('```', '').strip())
     except Exception as e:
@@ -141,7 +142,7 @@ def generate_email(request: EmailRequest):
 def generate_message(request: MessageRequest):
     try:
         agent = get_message_agent()
-        prompt = f"Context: {request.context}\nTone: {request.tone}"
+        prompt = f"Contexto: {request.context}\nTom de voz: {request.tone}"
         response = agent.run(prompt)
         return json.loads(response.content.replace('```json', '').replace('```', '').strip())
     except Exception as e:
@@ -168,10 +169,35 @@ def query_brain(request: BrainQueryRequest):
     try:
         agent = get_brain_agent()
         if not agent:
-             return {"response": "Knowledge Base not configured."}
+             return {"response": "Base de Conhecimento não configurada."}
              
         response = agent.run(request.query)
         return {"response": response.content}
     except Exception as e:
-         print(f"Brain Query Error: {e}")
+         print(f"Erro na consulta ao Cérebro: {e}")
          raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat")
+def chat_interceptor(request: AgentRequest):
+    """
+    Main Chat Interface Endpoint.
+    Uses the Interceptor Agent to route requests or answer directly.
+    """
+    try:
+        agent = get_agent(user_id=request.user_id)
+        response = agent.run(request.message)
+        
+        # Check if response attempts to be JSON (Action)
+        content = response.content
+        try:
+             # Try to parse if it looks like JSON
+            if content.strip().startswith('{') and content.strip().endswith('}'):
+                json_content = json.loads(content)
+                return json_content
+        except json.JSONDecodeError:
+            pass # Not JSON, just return text
+            
+        return {"response": content}
+    except Exception as e:
+        print(f"Erro no Chat Interceptador: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   Send,
@@ -9,6 +10,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/auth/auth-context";
+
 
 interface Message {
   id: string;
@@ -25,20 +28,19 @@ const quickSuggestions = [
   "Agende posts da semana",
 ];
 
-const initialMessages: Message[] = [
-  {
-    id: "1",
-    role: "ai",
-    content:
-      "Olá! Sou sua Umbra AI. Posso analisar seu perfil, gerar conteúdo personalizado e otimizar sua presença digital. O que deseja fazer?",
-    timestamp: new Date(),
-  },
-];
-
 export function AiChatbox() {
+  const router = useRouter();
+  const { user } = useAuth(); // Hook for navigation actions
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "ai",
+      content: "Olá! Sou sua Umbra AI. Posso analisar seu perfil, gerar conteúdo personalizado e otimizar sua presença digital. O que deseja fazer?",
+      timestamp: new Date(),
+    },
+  ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -50,9 +52,9 @@ export function AiChatbox() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  const handleSend = (text?: string) => {
+  const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
     if (!messageText) return;
 
@@ -67,17 +69,69 @@ export function AiChatbox() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+
+
+    try {
+      const response = await fetch("http://localhost:8000/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: messageText,
+          user_id: user?.id || "guest",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao buscar resposta");
+      }
+
+      const data = await response.json();
+
+      // Check for Action (Navigation)
+      if (data.type === "action" && data.action === "navigate") {
+        setIsTyping(false);
+        // Optional: Add a system message saying "Redirecting..."
+        const redirectMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "ai",
+          content: data.message || "Redirecionando você...",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, redirectMessage]);
+
+        // Wait a small moment then navigate
+        setTimeout(() => {
+          router.push(data.path);
+        }, 1000);
+        return;
+      }
+
+      // Standard Text Response
+      const content = data.response || "Desculpe, não consegui processar sua solicitação.";
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        content: getAiResponse(messageText),
+        content: content,
         timestamp: new Date(),
       };
+
       setMessages((prev) => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error("Chat Error:", error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "ai",
+        content: "Desculpe, estou enfrentando problemas de conexão com o servidor.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -99,7 +153,7 @@ export function AiChatbox() {
           <div className="relative h-12 w-12 transition-transform duration-500 group-hover:rotate-12">
             <Image
               src="/assets/3d/chat_assistant_icon.png"
-              alt="Umbra AI Assistant"
+              alt="Assistente Umbra"
               fill
               className="object-contain drop-shadow-[0_0_15px_rgba(157,80,187,0.5)]"
             />
@@ -140,6 +194,7 @@ export function AiChatbox() {
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                title={isExpanded ? "Minimizar" : "Expandir"}
               >
                 <ChevronDown
                   className={cn(
@@ -154,6 +209,7 @@ export function AiChatbox() {
                   setIsExpanded(false);
                 }}
                 className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                title="Fechar"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -172,7 +228,7 @@ export function AiChatbox() {
               >
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
                     msg.role === "user"
                       ? "bg-electric/20 text-foreground rounded-br-md"
                       : "bg-muted text-foreground rounded-bl-md"
@@ -198,7 +254,7 @@ export function AiChatbox() {
           </div>
 
           {/* Quick suggestions */}
-          <div className="flex gap-2 overflow-x-auto px-4 py-2 border-t border-border/50">
+          <div className="flex gap-2 overflow-x-auto px-4 py-2 border-t border-border/50 scrollbar-none">
             {quickSuggestions.map((suggestion) => (
               <button
                 key={suggestion}
@@ -225,7 +281,7 @@ export function AiChatbox() {
               />
               <button
                 onClick={() => handleSend()}
-                disabled={!input.trim()}
+                disabled={!input.trim() || isTyping}
                 aria-label="Enviar mensagem"
                 className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all",
@@ -242,24 +298,4 @@ export function AiChatbox() {
       )}
     </>
   );
-}
-
-function getAiResponse(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes("analis") || lower.includes("último post")) {
-    return "Analisei seu último post no LinkedIn. O engajamento está 23% acima da média! Seu tom foi 78% técnico e 22% conversacional. Sugiro manter essa proporção — está funcionando muito bem para seu público.";
-  }
-  if (lower.includes("carrossel") || lower.includes("carousel")) {
-    return "Vou criar um carrossel sobre IA com 8 slides. Estrutura sugerida:\n\n1. Hook visual impactante\n2. O problema que a IA resolve\n3-6. 4 aplicações práticas\n7. Dados e resultados\n8. CTA forte\n\nDeseja que eu gere o conteúdo completo?";
-  }
-  if (lower.includes("tom") || lower.includes("tone")) {
-    return "Entendido! Ajustei o tom dos próximos posts para um estilo mais técnico. Os drafts na sua grade de conteúdo já foram atualizados. Quer revisar as mudanças?";
-  }
-  if (lower.includes("hashtag")) {
-    return "Aqui estão as hashtags trending no seu nicho:\n\n#InteligênciaArtificial #TechBrasil #Inovação #FuturoDoTrabalho #IA2025 #Produtividade #StartupLife\n\nSugiro usar 5-7 hashtags por post no LinkedIn e 15-20 no Instagram.";
-  }
-  if (lower.includes("agend") || lower.includes("semana")) {
-    return "Criei um calendário otimizado para a semana:\n\n📅 Seg 09h - LinkedIn (artigo técnico)\n📅 Ter 12h - Instagram (carrossel)\n📅 Qua 08h - LinkedIn (case study)\n📅 Qui 18h - Instagram (reel script)\n📅 Sex 09h - LinkedIn (reflexão)\n\nDeseja ajustar algum horário?";
-  }
-  return "Entendi! Vou processar sua solicitação. Com base no seu perfil e histórico de engajamento, posso criar conteúdo personalizado ou ajustar sua estratégia. O que mais posso fazer por você?";
 }

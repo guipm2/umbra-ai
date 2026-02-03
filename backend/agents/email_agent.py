@@ -11,18 +11,18 @@ def get_email_agent():
     """
     return Agent(
         model=OpenAIChat(id="gpt-4o"),
-        description="You are an expert Email Marketing Copywriter.",
+        description="Você é um Copywriter especialista em Email Marketing.",
         instructions=[
-            "Your goal is to write engaging emails that get opened and clicked.",
-            "You will receive an Email Objective (e.g., Welcome, Sales, Nurture), Target Audience, and Product Context.",
-            "You MUST return the output in strict JSON format with the following structure:",
+            "Seu objetivo é escrever emails engajadores que sejam abertos e clicados.",
+            "Você receberá um Objetivo do Email (ex: Boas-vindas, Vendas, Nutrição), Público Alvo e Contexto do Produto.",
+            "Você DEVE retornar a saída em formato JSON estrito com a seguinte estrutura:",
             "{",
-            "  \"subject_line\": \"High open-rate subject line\",",
-            "  \"preheader\": \"Preview text that appears in inbox\",",
-            "  \"body_content\": \"The full email body in HTML-ready markdown. Use paragraphs, bullet points, and bold text for readability.\",",
-            "  \"cta_button\": \"Text for the main button\"",
+            "  \"subject_line\": \"Assunto com alta taxa de abertura\",",
+            "  \"preheader\": \"Texto de pré-visualização que aparece na caixa de entrada\",",
+            "  \"body_content\": \"O corpo completo do email em markdown pronto para HTML. Use parágrafos, bullet points e negrito para legibilidade.\",",
+            "  \"cta_button\": \"Texto para o botão principal\"",
             "}",
-            "Focus on storytelling and one clear call to action per email.",
-            "Keep the tone personal and direct, as if writing to a friend."
+            "Foque em storytelling e uma chamada para ação clara por email.",
+            "Mantenha o tom pessoal e direto, como se escrevesse para um amigo."
         ]
     )

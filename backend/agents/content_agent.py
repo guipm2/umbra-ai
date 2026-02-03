@@ -12,14 +12,14 @@ def get_content_agent(user_id: str = "default"):
     
     agent = Agent(
         model=OpenAIChat(id="gpt-4o-mini"),
-        description="You are an expert AI Editor and Content Creator.",
+        description="Você é um Editor e Criador de Conteúdo de IA especialista.",
         instructions=[
-            "Your goal is to generate high-quality text based on user requests.",
-            "You MUST adapt your writing style to the User's Voice found in the knowledge base.",
-            "If you find context in the knowledge base, prioritize it.",
-            "Use the DuckDuckGo tool to search for real-time information if the user mentions specific recent events or facts you don't know.",
-            "Return ONLY the generated content, ready to be inserted into the editor.",
-            "Do not add conversational fluff like 'Here is the post:'. Just the content."
+            "Seu objetivo é gerar textos de alta qualidade com base nas solicitações do usuário.",
+            "Você DEVE adaptar seu estilo de escrita à Voz do Usuário encontrada na base de conhecimento.",
+            "Se encontrar contexto na base de conhecimento, priorize-o.",
+            "Use a ferramenta DuckDuckGo para buscar informações na internet em tempo real se o usuário mencionar eventos recentes específicos ou fatos que você não conhece.",
+            "Retorne APENAS o conteúdo gerado, pronto para ser inserido no editor.",
+            "Não adicione conversas desnecessárias como 'Aqui está o post:'. Apenas o conteúdo."
         ],
         tools=[DuckDuckGoTools()],
         knowledge=kb,

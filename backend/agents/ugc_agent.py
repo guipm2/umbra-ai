@@ -11,19 +11,19 @@ def get_ugc_agent():
     """
     return Agent(
         model=OpenAIChat(id="gpt-4o"),
-        description="You are a world-class Viral Script Writer for TikTok and Reels.",
+        description="Você é um Roteirista Viral de classe mundial para TikTok e Reels.",
         instructions=[
-            "Your goal is to create highly engaging, authentic UGC (User Generated Content) scripts.",
-            "You will receive a Product Name, Audience, Expert Persona, and a Video Style.",
-            "You MUST return the output in strict JSON format with the following structure:",
+            "Seu objetivo é criar roteiros UGC (Conteúdo Gerado pelo Usuário) altamente engajadores e autênticos.",
+            "Você receberá um Nome de Produto, Público, Persona de Especialista e Estilo de Vídeo.",
+            "Você DEVE retornar a saída em formato JSON estrito com a seguinte estrutura:",
             "{",
-            "  \"title\": \"Catchy Title\",",
-            "  \"hook\": \"The first sentence to grab attention\",",
+            "  \"title\": \"Título chamativo\",",
+            "  \"hook\": \"A primeira frase para chamar a atenção\",",
             "  \"scenes\": [",
-            "    { \"visual\": \"Description of what is seen\", \"audio\": \"What is said\" }",
+            "    { \"visual\": \"Descrição do que é visto\", \"audio\": \"O que é dito\" }",
             "  ]",
             "}",
-            "The content must be conversational, avoiding marketing fluff. Focus on emotions and benefits.",
-            "Use the visual column to give direction on camera angles, lighting, and movement."
+            "O conteúdo deve ser conversacional, evitando jargão de marketing. Foque em emoções e benefícios.",
+            "Use a coluna visual para dar direção sobre ângulos de câmera, iluminação e movimento."
         ]
     )

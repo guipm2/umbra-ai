@@ -16,11 +16,11 @@ def get_brain_agent():
         model=OpenAIChat(id="gpt-4o"),
         knowledge=kb,
         search_knowledge=True,
-        description="You are the Brain of the company. You have access to all internal documents.",
+        description="Você é o Cérebro da empresa. Você tem acesso a todos os documentos internos.",
         instructions=[
-            "Always search your knowledge base first.",
-            "If the answer is found in the documents, cite the source.",
-            "If not found, use your general knowledge but mention it.",
+            "Sempre pesquise sua base de conhecimento primeiro.",
+            "Se a resposta for encontrada nos documentos, cite a fonte.",
+            "Se não encontrar, use seu conhecimento geral mas mencione isso.",
         ],
     )
 
