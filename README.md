@@ -1,36 +1,427 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Umbra AI
 
-## Getting Started
+**Plataforma completa de criação de conteúdo com inteligência artificial para marketing digital.**
 
-First, run the development server:
+Umbra AI é uma solução all-in-one que combina múltiplos agentes especializados para gerar conteúdo de alta qualidade, analisar dados de mercado e otimizar estratégias digitais.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 📋 Índice
+
+- [Visão Geral](#-visão-geral)
+- [Arquitetura](#-arquitetura)
+- [Funcionalidades](#-funcionalidades)
+- [Tecnologias](#-tecnologias)
+- [Instalação](#-instalação)
+- [Configuração](#-configuração)
+- [Uso](#-uso)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Agentes](#-agentes)
+
+---
+
+## 🎯 Visão Geral
+
+A **Umbra AI** é uma plataforma SaaS que utiliza múltiplos agentes de IA especializados para automatizar e otimizar a criação de conteúdo digital. Com foco em marketing, a plataforma oferece desde a criação de posts para redes sociais até análise de mercado em tempo real.
+
+### Principais Diferenciais
+
+- **Sistema Multi-Agente**: Agentes especializados para diferentes tipos de conteúdo
+- **Agente Interceptador**: Roteamento inteligente de requisições
+- **Base de Conhecimento**: RAG (Retrieval-Augmented Generation) personalizada
+- **Análise em Tempo Real**: Integração com pesquisa web (DuckDuckGo)
+- **Interface Moderna**: UI desenvolvida com Next.js e Tailwind CSS
+
+---
+
+## 🏗 Arquitetura
+
+```
+umbra-ai/
+├── frontend/          # Next.js + React (Interface)
+│   ├── src/
+│   │   ├── app/           # Rotas e páginas
+│   │   ├── components/    # Componentes reutilizáveis
+│   │   └── lib/           # Utilitários e configs
+│   └── public/            # Assets estáticos
+│
+└── backend/           # FastAPI (Servidor de IA)
+    ├── agents/            # Agentes especializados
+    ├── knowledge_base/    # Sistema RAG
+    ├── agent.py           # Agente Interceptador
+    └── main.py            # Server FastAPI
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Stack Tecnológico
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Frontend:**
+- Next.js 16.1.5
+- React 19.2.3
+- TypeScript
+- Tailwind CSS 4
+- Supabase (Auth + Database)
+- Three.js (Visualizações 3D)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Backend:**
+- FastAPI
+- Python 3.x
+- Agno Framework
+- OpenAI GPT-4o / GPT-4o-mini
+- PostgreSQL (via Supabase)
+- DuckDuckGo Search API
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## ✨ Funcionalidades
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. **Dashboard**
+- Visão geral da conta
+- Estatísticas de uso
+- Atalhos rápidos
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. **Estratégia**
 
-## Deploy on Vercel
+#### Produtos
+Cadastro de produtos, serviços ou infoprodutos que serão promovidos.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Públicos
+Definição de públicos-alvo e avatares para personalização de conteúdo.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### Especialistas
+Cadastro de personas/autores que assinam o conteúdo (tom de voz, arquétipo).
+
+### 3. **Criação de Conteúdo**
+
+#### Copy Center
+**Agente:** `ContentAgent`  
+**Função:** Criar posts, legendas e artigos para redes sociais.  
+**Rota:** `/dashboard/copy-center`
+
+#### Gerador de UGC
+**Agente:** `UGCAgent`  
+**Função:** Roteiros para vídeos virais (TikTok/Reels).  
+**Rota:** `/dashboard/generator/ugc`
+
+#### Anúncios Estáticos
+**Agente:** `StaticAdAgent`  
+**Função:** Copy para anúncios de imagem.  
+**Rota:** `/dashboard/generator/static`
+
+#### Email Marketing
+**Agente:** `EmailAgent`  
+**Função:** Campanhas de email e newsletters.  
+**Rota:** `/dashboard/generator/email`
+
+#### Mensagens Diretas
+**Agente:** `MessageAgent`  
+**Função:** Scripts para DM, WhatsApp ou respostas a comentários.  
+**Rota:** `/dashboard/generator/messages`
+
+### 4. **Inteligência**
+
+#### Cérebro (Brain)
+**Rota:** `/dashboard/brain`  
+**Função:** Upload de documentos (PDF, DOCX) para treinar a IA com a voz e conhecimento do usuário.
+
+#### Analytics
+**Agente:** `AnalyticsAgent`  
+**Rota:** `/dashboard/analytics`  
+**Função:** Análise de dados e pesquisa web em tempo real.
+
+### 5. **Chat IA**
+
+**Agente:** `InterceptorAgent` (Router)  
+**Interface:** Popup flutuante (canto inferior direito)  
+**Função:**
+- Responder dúvidas sobre a plataforma
+- Rotear requisições para agentes especializados
+- Executar tarefas rápidas
+- Redirecionar para ferramentas complexas
+
+---
+
+## 🛠 Tecnologias
+
+### Frontend
+
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| Next.js | 16.1.5 | Framework React |
+| React | 19.2.3 | UI Library |
+| TypeScript | 5.x | Type Safety |
+| Tailwind CSS | 4.x | Styling |
+| Supabase | 2.93.1 | Auth + Database |
+| Three.js | 0.182.0 | 3D Graphics |
+| Framer Motion | 12.29.2 | Animations |
+
+### Backend
+
+| Tecnologia | Uso |
+|------------|-----|
+| FastAPI | REST API Server |
+| Agno | Multi-Agent Framework |
+| OpenAI | GPT-4o, GPT-4o-mini |
+| DuckDuckGo | Web Search Tool |
+| PostgreSQL | Database (via Supabase) |
+| SQLAlchemy | ORM |
+| pgvector | Vector Storage |
+
+---
+
+## 📦 Instalação
+
+### Pré-requisitos
+
+- Node.js 20+
+- Python 3.10+
+- npm ou yarn
+- Conta Supabase
+- Chave API OpenAI
+
+### 1. Clone o Repositório
+
+```bash
+git clone https://github.com/seu-usuario/umbra-ai.git
+cd umbra-ai
+```
+
+### 2. Configure o Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+Crie o arquivo `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_supabase
+```
+
+### 3. Configure o Backend
+
+```bash
+cd ../backend
+python -m venv venv
+
+# Windows
+.\venv\Scripts\activate
+
+# Linux/Mac
+source venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+Crie o arquivo `.env`:
+
+```env
+OPENAI_API_KEY=sua_chave_openai
+```
+
+---
+
+## ⚙️ Configuração
+
+### Banco de Dados (Supabase)
+
+Execute as migrations SQL no Supabase para criar as tabelas:
+
+- `profiles` - Perfis de usuários
+- `products` - Produtos cadastrados
+- `audiences` - Públicos-alvo
+- `experts` - Especialistas/Personas
+
+### Variáveis de Ambiente
+
+**Frontend (`.env.local`):**
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
+```
+
+**Backend (`.env`):**
+```env
+OPENAI_API_KEY=sk-...
+```
+
+---
+
+## 🚀 Uso
+
+### Desenvolvimento
+
+**Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+Acesse: `http://localhost:3000`
+
+**Backend:**
+```bash
+cd backend
+python -m uvicorn main:app --reload
+```
+API disponível em: `http://localhost:8000`
+
+### Produção
+
+**Frontend:**
+```bash
+cd frontend
+npm run build
+npm start
+```
+
+**Backend:**
+```bash
+cd backend
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+umbra-ai/
+├── frontend/
+│   ├── src/
+│   │   ├── app/                    # Rotas Next.js (App Router)
+│   │   │   ├── dashboard/          # Área autenticada
+│   │   │   │   ├── analytics/      # Página de Analytics
+│   │   │   │   ├── brain/          # Knowledge Base UI
+│   │   │   │   ├── copy-center/    # Editor de conteúdo
+│   │   │   │   ├── experts/        # CRUD Especialistas
+│   │   │   │   ├── products/       # CRUD Produtos
+│   │   │   │   ├── audiences/      # CRUD Públicos
+│   │   │   │   └── generator/      # Ferramentas de geração
+│   │   │   ├── auth/               # Callback Supabase
+│   │   │   └── login/              # Página de login
+│   │   ├── components/
+│   │   │   ├── auth/               # Auth Context
+│   │   │   ├── chat/               # AI Chatbox
+│   │   │   ├── dashboard/          # Componentes do dashboard
+│   │   │   ├── landing/            # Landing page
+│   │   │   ├── layout/             # Layout (Sidebar, Navbar)
+│   │   │   └── ui/                 # Componentes UI reutilizáveis
+│   │   ├── lib/
+│   │   │   ├── supabase.ts         # Cliente Supabase
+│   │   │   └── utils.ts            # Utilities
+│   │   └── hooks/                  # React Hooks customizados
+│   └── public/                     # Assets estáticos
+│
+├── backend/
+│   ├── agents/                     # Agentes especializados
+│   │   ├── analytics_agent.py      # Análise + Web Search
+│   │   ├── brain_agent.py          # RAG Knowledge Base
+│   │   ├── content_agent.py        # Posts/Artigos
+│   │   ├── email_agent.py          # Email Marketing
+│   │   ├── message_agent.py        # Mensagens DM
+│   │   ├── static_ad_agent.py      # Anúncios
+│   │   └── ugc_agent.py            # UGC Scripts
+│   ├── knowledge_base/             # Sistema RAG
+│   │   └── core.py                 # KB Core Logic
+│   ├── agent.py                    # Interceptor Agent (Router)
+│   ├── main.py                     # FastAPI App
+│   └── requirements.txt            # Dependências Python
+│
+└── supabase/                       # Configs Supabase
+```
+
+---
+
+## 🤖 Agentes
+
+### 1. **Interceptor Agent** (`agent.py`)
+
+**Modelo:** GPT-4o  
+**Função:** Agente principal que:
+- Classifica a intenção do usuário
+- Roteia para agentes especializados
+- Responde dúvidas sobre a plataforma
+- Sugere navegação para ferramentas complexas
+
+**Ferramentas:**
+- `run_content_agent()`
+- `run_analytics_agent()`
+- `run_ugc_agent()`
+
+**Endpoint:** `/api/chat`
+
+---
+
+### 2. **Content Agent** (`content_agent.py`)
+
+**Modelo:** GPT-4o-mini  
+**Função:** Geração de conteúdo para redes sociais.  
+**RAG:** Usa `get_knowledge_base(user_id)` para adaptar ao estilo do usuário.  
+**Ferramentas:** DuckDuckGo Search  
+**Endpoint:** `/api/content`
+
+---
+
+### 3. **Analytics Agent** (`analytics_agent.py`)
+
+**Modelo:** GPT-4o  
+**Função:** Pesquisa web e análise de dados em tempo real.  
+**Contexto:** Injeção automática da data atual.  
+**Ferramentas:** DuckDuckGo Search  
+**Endpoint:** `/api/analytics`
+
+---
+
+### 4. **UGC Agent** (`ugc_agent.py`)
+
+**Função:** Criação de roteiros para vídeos virais (TikTok/Reels).  
+**Formato de Saída:** JSON estruturado.  
+**Endpoint:** `/api/ugc`
+
+---
+
+### 5. **Static Ad Agent** (`static_ad_agent.py`)
+
+**Função:** Copy para anúncios de imagem.  
+**Endpoint:** `/api/static-ad`
+
+---
+
+### 6. **Email Agent** (`email_agent.py`)
+
+**Função:** Campanhas de email marketing.  
+**Endpoint:** `/api/email`
+
+---
+
+### 7. **Message Agent** (`message_agent.py`)
+
+**Função:** Scripts para mensagens diretas.  
+**Endpoint:** `/api/message`
+
+---
+
+### 8. **Brain Agent** (`brain_agent.py`)
+
+**Função:** RAG (Retrieval-Augmented Generation) com base de conhecimento do usuário.  
+**Upload:** `/api/brain/upload`  
+**Query:** `/api/brain/query`
+
+---
+
+## 📝 Licença
+
+Este projeto é proprietário e confidencial.
+
+---
+
+## 👥 Autores
+
+Desenvolvido por **Guilherme Miranda** e **@utopia.solutions**.
+
+---
+
+## 📧 Contato
+
+Para mais informações, entre em contato através do dashboard da plataforma.
