@@ -22,7 +22,6 @@ def get_analytics_agent():
             "Se a informação não for encontrada ou for incerta, informe o usuário claramente."
         ],
         tools=[DuckDuckGoTools()],
-        markdown=True,
-        show_tool_calls=True
+        markdown=True
     )
     return agent

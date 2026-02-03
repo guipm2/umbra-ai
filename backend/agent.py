@@ -115,8 +115,7 @@ def get_agent(user_id: str = "default"):
         description="Você é o Agente Interceptador e Router da Umbra AI.",
         instructions=[platform_knowledge],
         tools=[run_content_agent, run_analytics_agent, run_ugc_agent],
-        markdown=True,
-        show_tool_calls=True # Useful for debugging, but frontend might hide it
+        markdown=True
     )
     
     return agent
