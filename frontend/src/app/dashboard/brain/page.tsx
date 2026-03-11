@@ -61,7 +61,7 @@ export default function BrainPage() {
         formData.append("file", file);
 
         try {
-            const response = await fetch("http://localhost:8000/api/brain/upload", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/brain/upload`, {
                 method: "POST",
                 body: formData,
             });

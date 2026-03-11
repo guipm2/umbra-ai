@@ -79,7 +79,7 @@ function UGCGeneratorContent() {
             if (!fullCampaign) throw new Error("Detalhes da campanha não encontrados");
 
             // 2. Call AI Backend
-            const response = await fetch('http://localhost:8000/api/ugc', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ugc`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
