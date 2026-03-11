@@ -16,7 +16,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://SEU-PROJETO.vercel.app",  # TODO: substituir pela URL real após deploy na Vercel
+        "https://umbra-ai.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
