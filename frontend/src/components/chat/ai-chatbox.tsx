@@ -178,17 +178,11 @@ export function AiChatbox() {
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-electric/20">
-                <Sparkles className="h-4 w-4 text-neon" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  Umbra AI
-                </h3>
-                <p className="text-[10px] text-muted-foreground">
-                  Central de Comando
-                </p>
-              </div>
+              <img
+                src="/assets/logo-umbra.png"
+                alt="Umbra AI"
+                className="h-7 w-auto object-contain"
+              />
             </div>
             <div className="flex items-center gap-1">
               <button

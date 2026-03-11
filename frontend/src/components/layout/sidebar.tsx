@@ -183,13 +183,20 @@ export function Sidebar() {
     <>
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric/20 neon-glow">
-          <Sparkles className="h-5 w-5 text-neon" />
-        </div>
-        {showLabels && (
-          <span className="text-lg font-semibold tracking-tight text-foreground neon-text">
-            Umbra AI
-          </span>
+        {showLabels ? (
+          <img
+            src="/assets/logo-umbra.png"
+            alt="Umbra AI"
+            className="h-8 w-auto object-contain"
+          />
+        ) : (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg overflow-hidden">
+            <img
+              src="/assets/logo-umbra.png"
+              alt="Umbra AI"
+              className="h-9 w-9 object-cover"
+            />
+          </div>
         )}
         {/* Mobile close button */}
         <button

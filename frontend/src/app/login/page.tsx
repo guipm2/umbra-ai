@@ -97,8 +97,12 @@ export default function LoginPage() {
                 className="w-full max-w-md p-8 rounded-3xl glass-strong border border-white/10 relative z-10"
             >
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-electric/20 mb-4 shadow-lg shadow-electric/20">
-                        <Lock className="w-6 h-6 text-neon" />
+                    <div className="flex justify-center mb-4">
+                        <img
+                            src="/assets/logo-umbra.png"
+                            alt="Umbra AI"
+                            className="h-12 w-auto object-contain"
+                        />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
                         {isRecovery ? "Recuperar Acesso" : (isSignup ? "Criar Credenciais" : "Acesso Restrito")}

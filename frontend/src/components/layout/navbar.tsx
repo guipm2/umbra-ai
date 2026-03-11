@@ -85,10 +85,11 @@ export function Navbar() {
                 >
                     {/* Logo */}
                     <a href="#" onClick={scrollToTop} className="flex items-center gap-2 group cursor-pointer">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-electric/20 transition-colors group-hover:bg-electric/30">
-                            <Sparkles className="h-4 w-4 text-neon" />
-                        </div>
-                        <span className="font-bold text-white tracking-wide">Umbra</span>
+                        <img
+                            src="/assets/logo-umbra.png"
+                            alt="Umbra AI"
+                            className="h-8 w-auto object-contain"
+                        />
                     </a>
 
                     {/* Desktop Links */}
