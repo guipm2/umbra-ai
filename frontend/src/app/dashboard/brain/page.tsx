@@ -6,6 +6,7 @@ import { Upload, FileText, Sparkles, BrainCircuit, Trash2, Plus, Loader2 } from 
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
+import { safeSetItem } from "@/lib/storage";
 
 export default function BrainPage() {
     const { user } = useAuth();
@@ -47,7 +48,7 @@ export default function BrainPage() {
 
     const handleSaveVoice = async () => {
         // Update Cache
-        localStorage.setItem('aura_brain_voice', localVoice);
+        safeSetItem('aura_brain_voice', localVoice);
         await refreshVoice();
         alert("Voz salva! (Localmente)");
     };
