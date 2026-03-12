@@ -26,7 +26,7 @@ interface AssetManagerProps {
 export function AssetManager({ title, description, tableName, icon: Icon, fields, renderCard }: AssetManagerProps) {
     const { user } = useAuth();
     // Unified Hook
-    const { data: items = [], loading, refresh } = useCachedQuery({
+    const { data: items = [], loading, error, refresh } = useCachedQuery({
         key: `aura_assets_${tableName}`,
         fetcher: async () => {
             const { data, error } = await supabase
@@ -224,6 +224,11 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
             {loading ? (
                 <div className="flex justify-center p-12">
                     <Loader2 className="h-8 w-8 animate-spin text-neon" />
+                </div>
+            ) : error ? (
+                <div className="text-center p-12 border border-dashed border-red-500/20 rounded-xl">
+                    <p className="text-gray-400 mb-2">Erro ao carregar dados.</p>
+                    <button onClick={() => refresh()} className="text-neon hover:underline text-sm">Tentar novamente</button>
                 </div>
             ) : filteredItems.length === 0 ? (
                 <div className="text-center p-12 border border-dashed border-white/10 rounded-xl">

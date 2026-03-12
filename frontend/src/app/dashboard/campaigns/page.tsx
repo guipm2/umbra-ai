@@ -11,7 +11,7 @@ export default function CampaignsPage() {
     const { user } = useAuth();
 
     // Unified Hook
-    const { data: campaigns = [], loading } = useCachedQuery({
+    const { data: campaigns = [], loading, error, refresh } = useCachedQuery({
         key: 'aura_campaigns',
         fetcher: async () => {
             const { data, error } = await supabase
@@ -51,6 +51,11 @@ export default function CampaignsPage() {
             {loading ? (
                 <div className="flex justify-center p-12">
                     <Loader2 className="h-8 w-8 animate-spin text-neon" />
+                </div>
+            ) : error ? (
+                <div className="text-center p-12 glass rounded-2xl border border-dashed border-red-500/20 flex flex-col items-center">
+                    <p className="text-gray-400 mb-2">Erro ao carregar campanhas.</p>
+                    <button onClick={() => refresh()} className="text-neon hover:underline text-sm">Tentar novamente</button>
                 </div>
             ) : campaigns.length === 0 ? (
                 <div className="text-center p-12 glass rounded-2xl border border-white/5 flex flex-col items-center">

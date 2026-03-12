@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/components/auth/auth-context";
 import { safeGetItem, safeSetItem } from "@/lib/storage";
 
+const QUERY_TIMEOUT_MS = 15_000;   // abort individual fetch after 15s
+const LOADING_TIMEOUT_MS = 20_000; // safety net: force loading=false after 20s
+
 interface UseCachedQueryOptions<T> {
     key: string;
     fetcher: () => Promise<T>;
@@ -16,29 +19,49 @@ interface UseCachedQueryOptions<T> {
 export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true, maxAge }: UseCachedQueryOptions<T>) {
     const { user, loading: authLoading } = useAuth();
     const [data, setData] = useState<T>(initialData as T);
-    // Only start as true if we are enabled. If not enabled, we shouldn't be loading.
     const [loading, setLoading] = useState(enabled);
     const [error, setError] = useState<any>(null);
 
+    // Stable user id to avoid re-running effect on object reference changes
+    const userId = user?.id ?? null;
+
     // Use ref to keep the latest fetcher without triggering effect re-runs
     const fetcherRef = useRef(fetcher);
-
     useEffect(() => {
         fetcherRef.current = fetcher;
     }, [fetcher]);
 
-    const refresh = useCallback(async () => {
+    // AbortController ref so cleanup can cancel in-flight requests
+    const abortRef = useRef<AbortController | null>(null);
+
+    const refresh = useCallback(async (signal?: AbortSignal) => {
         try {
             setLoading(true);
-            const result = await fetcherRef.current();
+            setError(null);
+
+            // Race the fetcher against a timeout
+            const result = await Promise.race([
+                fetcherRef.current(),
+                new Promise<never>((_, reject) => {
+                    const timer = setTimeout(() => reject(new Error("Query timeout")), QUERY_TIMEOUT_MS);
+                    signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new Error("Aborted")); });
+                }),
+            ]);
+
+            // If this effect was cleaned up, discard the result
+            if (signal?.aborted) return;
+
             setData(result);
             safeSetItem(key, result);
             setError(null);
-        } catch (err) {
+        } catch (err: any) {
+            if (signal?.aborted || err?.message === "Aborted") return;
             console.error(`Error fetching ${key}:`, err);
             setError(err);
         } finally {
-            setLoading(false);
+            if (!signal?.aborted) {
+                setLoading(false);
+            }
         }
     }, [key]);
 
@@ -46,26 +69,41 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true, m
         // If auth is still loading, wait.
         if (authLoading) return;
 
-        // If enabled but no user (e.g., logged out or momentary tab switch drop), 
-        // we must clear the loading state so the UI doesn't hang forever.
-        if (!enabled || !user) {
+        // If not enabled or no user, clear loading so UI doesn't hang.
+        if (!enabled || !userId) {
             setLoading(false);
             return;
         }
+
+        // Cancel any previous in-flight request
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
 
         // 1. Try to load from cache synchronously
         const cached = safeGetItem<T>(key, maxAge);
         if (cached !== null) {
             setData(cached);
-            // If we have cache, we immediately stop the loading spinner
-            // while we fetch fresh data in the background
             setLoading(false);
         }
 
         // 2. Trigger background fetch (always, to keep data fresh)
-        refresh();
+        refresh(controller.signal);
 
-    }, [key, user, authLoading, enabled, refresh, maxAge]);
+        // Safety net: if loading stays true for too long, force it off
+        const safetyTimer = setTimeout(() => {
+            if (!controller.signal.aborted) {
+                setLoading(false);
+                setError(new Error("Loading timeout"));
+                console.warn(`[useCachedQuery] Safety timeout for "${key}"`);
+            }
+        }, LOADING_TIMEOUT_MS);
 
-    return { data, loading, error, refresh, setData };
+        return () => {
+            controller.abort();
+            clearTimeout(safetyTimer);
+        };
+    }, [key, userId, authLoading, enabled, refresh, maxAge]);
+
+    return { data, loading, error, refresh: () => refresh(), setData };
 }
