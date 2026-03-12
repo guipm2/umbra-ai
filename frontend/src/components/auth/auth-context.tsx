@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     .from('profiles')
                     .select('id, full_name, avatar_url, subscription_tier')
                     .eq('id', userId)
-                    .single();
+                    .maybeSingle();
 
                 if (!error && data) {
                     setProfile(data);
