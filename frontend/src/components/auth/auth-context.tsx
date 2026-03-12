@@ -74,12 +74,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Listen for auth changes
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (event, session) => {
+        } = supabase.auth.onAuthStateChange((event, session) => {
             console.debug(`[auth] onAuthStateChange: ${event}`);
+
+            // Token refresh only updates the JWT — user didn't change.
+            // Updating session is enough; skip setUser/fetchProfile to avoid
+            // lock contention and unnecessary downstream re-renders.
+            if (event === 'TOKEN_REFRESHED') {
+                setSession(session);
+                return;
+            }
+
             setSession(session);
             setUser(session?.user ?? null);
+
             if (session?.user) {
-                await fetchProfile(session.user.id);
+                // Fire-and-forget: never await inside onAuthStateChange
+                // to prevent blocking the Supabase auth lock.
+                fetchProfile(session.user.id);
             } else {
                 setProfile(null);
             }

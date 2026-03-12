@@ -29,7 +29,7 @@ async function inMemoryLock<R>(
 ): Promise<R> {
     const prev = locks[name]
     if (prev) {
-        const timeout = acquireTimeout > 0 ? acquireTimeout : 5000
+        const timeout = Math.max(acquireTimeout > 0 ? acquireTimeout : 5000, 10000)
         await Promise.race([
             prev.catch(() => { /* ignore */ }),
             new Promise((r) => setTimeout(r, timeout)),

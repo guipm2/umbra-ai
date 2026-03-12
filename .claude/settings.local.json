@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "mcp__plugin_claude-mem_mcp-search__smart_search"
     ]
   }
 }
