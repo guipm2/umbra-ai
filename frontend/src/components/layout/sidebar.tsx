@@ -194,7 +194,7 @@ export function Sidebar() {
             <img
               src="/assets/logo-umbra.png"
               alt="Umbra AI"
-              className="h-9 w-9 object-cover"
+              className="h-7 w-7 object-contain"
             />
           </div>
         )}
