@@ -86,30 +86,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false);
         });
 
-        // Re-sync session when tab becomes visible again
-        const handleVisibilityChange = async () => {
-            if (document.visibilityState === "visible") {
-                console.debug("[auth] Tab visible — re-syncing session");
-                try {
-                    const {
-                        data: { session },
-                    } = await supabase.auth.getSession();
-                    setSession(session);
-                    setUser(session?.user ?? null);
-                    if (session?.user) {
-                        await fetchProfile(session.user.id);
-                    }
-                } catch (error) {
-                    console.error("[auth] Error re-syncing session on visibility:", error);
-                }
-            }
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-
         return () => {
             subscription.unsubscribe();
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
     }, []);
 
