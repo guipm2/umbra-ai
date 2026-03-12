@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Stepper } from "@/components/ui/stepper";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/auth-context";
+import { useCachedQuery } from "@/hooks/use-cached-query";
+import { safeRemoveItem } from "@/lib/storage";
 import { Loader2, ChevronRight, ChevronLeft, Package, Users, UserCheck, Target } from "lucide-react";
 
 const STEPS = [
@@ -20,10 +22,36 @@ export default function NewCampaignPage() {
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
-    // Data Sources
-    const [products, setProducts] = useState<any[]>([]);
-    const [audiences, setAudiences] = useState<any[]>([]);
-    const [experts, setExperts] = useState<any[]>([]);
+    // Centralized cached queries for assets
+    const { data: products = [] } = useCachedQuery<any[]>({
+        key: 'aura_assets_products',
+        fetcher: async () => {
+            const { data } = await supabase.from('products').select('*');
+            return data || [];
+        },
+        initialData: [],
+        enabled: !!user,
+    });
+
+    const { data: audiences = [] } = useCachedQuery<any[]>({
+        key: 'aura_assets_audiences',
+        fetcher: async () => {
+            const { data } = await supabase.from('audiences').select('*');
+            return data || [];
+        },
+        initialData: [],
+        enabled: !!user,
+    });
+
+    const { data: experts = [] } = useCachedQuery<any[]>({
+        key: 'aura_assets_experts',
+        fetcher: async () => {
+            const { data } = await supabase.from('experts').select('*');
+            return data || [];
+        },
+        initialData: [],
+        enabled: !!user,
+    });
 
     // Selection State
     const [selectedProduct, setSelectedProduct] = useState<string>("");
@@ -31,38 +59,6 @@ export default function NewCampaignPage() {
     const [selectedExpert, setSelectedExpert] = useState<string>("");
     const [campaignName, setCampaignName] = useState("");
     const [objective, setObjective] = useState("Vendas Diretas");
-
-    useEffect(() => {
-        if (user) loadAssets();
-    }, [user]);
-
-    async function loadAssets() {
-        // Load from Cache-First logic derived from AssetManager
-        // For brevity, we load directly from LocalStorage if available, fallback to empty array (should assume user visited Assets page or we fetch fresh)
-
-        // Products
-        const cachedProducts = localStorage.getItem('aura_assets_products');
-        if (cachedProducts) setProducts(JSON.parse(cachedProducts));
-        else fetchTable('products', setProducts, 'aura_assets_products');
-
-        // Audiences
-        const cachedAudiences = localStorage.getItem('aura_assets_audiences');
-        if (cachedAudiences) setAudiences(JSON.parse(cachedAudiences));
-        else fetchTable('audiences', setAudiences, 'aura_assets_audiences');
-
-        // Experts
-        const cachedExperts = localStorage.getItem('aura_assets_experts');
-        if (cachedExperts) setExperts(JSON.parse(cachedExperts));
-        else fetchTable('experts', setExperts, 'aura_assets_experts');
-    }
-
-    async function fetchTable(table: string, setter: any, cacheKey: string) {
-        const { data } = await supabase.from(table).select('*');
-        if (data) {
-            setter(data);
-            localStorage.setItem(cacheKey, JSON.stringify(data));
-        }
-    }
 
     const handleNext = () => {
         if (currentStep === 1 && !selectedProduct) return alert("Selecione um produto");
@@ -91,7 +87,8 @@ export default function NewCampaignPage() {
             if (error) throw error;
 
             // Clear Campaigns Cache to force refresh on list
-            localStorage.removeItem('aura_campaigns');
+            safeRemoveItem('aura_campaigns');
+            safeRemoveItem('aura_campaigns_active');
 
             router.push('/dashboard/campaigns');
         } catch (error) {

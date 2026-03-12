@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { User, CreditCard, Bell, Shield, LogOut, Loader2, CheckCircle2, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { safeGetItem, safeSetItem } from "@/lib/storage";
 
 interface UserProfile {
     id: string;
@@ -53,9 +54,9 @@ export default function SettingsPage() {
         async function loadProfile() {
             try {
                 // 1. Try to load from Local Storage first (Instant Load)
-                const cachedProfile = localStorage.getItem('aura_user_profile');
+                const cachedProfile = safeGetItem<UserProfile>('aura_user_profile', Infinity);
                 if (cachedProfile) {
-                    setProfile(JSON.parse(cachedProfile));
+                    setProfile(cachedProfile);
                     setLoading(false); // Stop loading immediately if we have cache
                 }
 
@@ -83,7 +84,7 @@ export default function SettingsPage() {
 
                 // 3. Update State and Cache
                 setProfile(freshProfile);
-                localStorage.setItem('aura_user_profile', JSON.stringify(freshProfile));
+                safeSetItem('aura_user_profile', freshProfile);
 
             } catch (error) {
                 console.error('Error fetching profile:', error);
@@ -149,7 +150,7 @@ export default function SettingsPage() {
             // Update Local Storage
             setProfile(prev => {
                 const newProfile = { ...prev, avatar_url: data.publicUrl };
-                localStorage.setItem('aura_user_profile', JSON.stringify(newProfile));
+                safeSetItem('aura_user_profile', newProfile);
                 return newProfile;
             });
 
@@ -197,7 +198,7 @@ export default function SettingsPage() {
             if (error) throw error;
 
             // Update Local Storage on Save
-            localStorage.setItem('aura_user_profile', JSON.stringify(profile));
+            safeSetItem('aura_user_profile', profile);
 
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);

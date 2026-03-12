@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/components/auth/auth-context";
+import { safeGetItem, safeSetItem } from "@/lib/storage";
 
 interface UseCachedQueryOptions<T> {
     key: string;
     fetcher: () => Promise<T>;
     initialData?: T;
     enabled?: boolean;
+    /** Max age in ms before cache is considered expired. Default: 30 min. */
+    maxAge?: number;
 }
 
-export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true }: UseCachedQueryOptions<T>) {
+export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true, maxAge }: UseCachedQueryOptions<T>) {
     const { user } = useAuth();
     const [data, setData] = useState<T>(initialData as T);
     const [loading, setLoading] = useState(true);
@@ -27,7 +30,7 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true }:
         try {
             const result = await fetcherRef.current();
             setData(result);
-            localStorage.setItem(key, JSON.stringify(result));
+            safeSetItem(key, result);
             setError(null);
         } catch (err) {
             console.error(`Error fetching ${key}:`, err);
@@ -40,23 +43,17 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true }:
     useEffect(() => {
         if (!enabled || !user) return;
 
-        // 1. Try Load Cache synchronously (or close to it)
-        try {
-            const cached = localStorage.getItem(key);
-            if (cached) {
-                const parsed = JSON.parse(cached);
-                setData(parsed);
-                // If we found cache, we are not "loading" in the blocking sense anymore
-                setLoading(false);
-            }
-        } catch (e) {
-            console.warn(`Failed to parse cache for ${key}`, e);
+        // 1. Try to load from cache synchronously
+        const cached = safeGetItem<T>(key, maxAge);
+        if (cached !== null) {
+            setData(cached);
+            setLoading(false);
         }
 
-        // 2. Trigger Background Fetch
+        // 2. Trigger background fetch (always, to keep data fresh)
         refresh();
 
-    }, [key, user, enabled, refresh]);
+    }, [key, user, enabled, refresh, maxAge]);
 
     return { data, loading, error, refresh, setData };
 }

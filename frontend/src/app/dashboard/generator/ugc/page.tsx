@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { Loader2, Smartphone, Video, Sparkles, ChevronRight, Copy, Check, PlayCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -20,8 +21,16 @@ function UGCGeneratorContent() {
     const searchParams = useSearchParams();
     const preSelectedCampaignId = searchParams.get("campaignId");
 
-    const [campaigns, setCampaigns] = useState<any[]>([]);
-    const [loadingCampaigns, setLoadingCampaigns] = useState(true);
+    // Centralized cached query for campaigns
+    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery<any[]>({
+        key: 'aura_campaigns_active',
+        fetcher: async () => {
+            const { data } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
+            return data || [];
+        },
+        initialData: [],
+        enabled: !!user,
+    });
 
     // State
     const [selectedCampaign, setSelectedCampaign] = useState(preSelectedCampaignId || "");
@@ -29,34 +38,12 @@ function UGCGeneratorContent() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedScript, setGeneratedScript] = useState<any>(null);
 
-    // Cache-First Campaign Fetch
-    useEffect(() => {
-        if (user) {
-            const cached = localStorage.getItem('aura_campaigns');
-            if (cached) {
-                setCampaigns(JSON.parse(cached));
-                setLoadingCampaigns(false);
-            }
-            fetchCampaigns();
-        }
-    }, [user]);
-
     // Update selected campaign if URL param changes
     useEffect(() => {
         if (preSelectedCampaignId) {
             setSelectedCampaign(preSelectedCampaignId);
         }
     }, [preSelectedCampaignId]);
-
-    async function fetchCampaigns() {
-        // Silent update
-        const { data } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
-        if (data) {
-            setCampaigns(data);
-            localStorage.setItem('aura_campaigns', JSON.stringify(data));
-        }
-        setLoadingCampaigns(false);
-    }
 
     const handleGenerate = async () => {
         if (!selectedCampaign || !selectedStyle) return;
