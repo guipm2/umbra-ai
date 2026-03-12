@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { Loader2, Zap, LayoutTemplate, Copy, Image as ImageIcon, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 
 function StaticAdGeneratorContent() {
     const { user } = useAuth();
@@ -51,9 +53,8 @@ function StaticAdGeneratorContent() {
 
             if (!fullCampaign) throw new Error("Detalhes da campanha não encontrados");
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/static-ad`, {
+            const response = await apiFetch("/api/static-ad", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     product_name: fullCampaign.products.name,
                     audience_name: fullCampaign.audiences.name,
@@ -68,7 +69,7 @@ function StaticAdGeneratorContent() {
 
         } catch (error) {
             console.error(error);
-            alert("Erro ao gerar anúncio. Verifique o backend.");
+            toast.error("Erro ao gerar anúncio. Verifique o backend.");
         } finally {
             setIsGenerating(false);
         }
@@ -90,10 +91,10 @@ function StaticAdGeneratorContent() {
             });
 
             if (error) throw error;
-            alert("Salvo com sucesso!");
+            toast.success("Salvo com sucesso!");
         } catch (error) {
             console.error(error);
-            alert("Erro ao salvar.");
+            toast.error("Erro ao salvar.");
         } finally {
             setIsSaving(false);
         }

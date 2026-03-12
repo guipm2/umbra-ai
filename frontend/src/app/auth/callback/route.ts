@@ -6,8 +6,10 @@ import { cookies } from "next/headers";
 export async function GET(request: NextRequest) {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get("code");
-    // If no "next" param is provided, default to dashboard
-    const next = requestUrl.searchParams.get("next") || "/dashboard";
+    // Validate "next" param to prevent open redirect attacks
+    const rawNext = requestUrl.searchParams.get("next") || "/dashboard";
+    // Only allow relative paths starting with / and not containing //
+    const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
     if (code) {
         const cookieStore = await cookies();

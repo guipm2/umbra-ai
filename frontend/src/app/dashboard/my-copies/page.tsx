@@ -22,6 +22,7 @@ import {
     FileText
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 type GeneratedContent = {
     id: string;
@@ -70,7 +71,7 @@ export default function MyCopiesPage() {
 
             if (error) {
                 console.error(error);
-                alert("Erro ao deletar.");
+                toast.error("Erro ao deletar.");
             } else {
                 // Refresh logic via hook
                 await refresh();
@@ -412,7 +413,7 @@ export default function MyCopiesPage() {
                                     onClick={() => {
                                         const text = getCopyText(selectedCopy);
                                         navigator.clipboard.writeText(text);
-                                        alert("Texto copiado!");
+                                        toast.success("Texto copiado!");
                                     }}
                                     className="px-4 py-2 rounded-lg bg-white/10 text-white font-bold text-xs hover:bg-white/20 transition-colors flex items-center gap-2"
                                 >
@@ -422,7 +423,7 @@ export default function MyCopiesPage() {
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(JSON.stringify(selectedCopy.content, null, 2));
-                                        alert("JSON copiado!");
+                                        toast.success("JSON copiado!");
                                     }}
                                     className="px-4 py-2 rounded-lg bg-neon text-black font-bold text-xs hover:bg-neon/90 transition-colors flex items-center gap-2 shadow-lg shadow-neon/20"
                                 >

@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { Loader2, Smartphone, Video, Sparkles, ChevronRight, Copy, Check, PlayCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 
 // Video Styles Mock
 const VIDEO_STYLES = [
@@ -66,9 +68,8 @@ function UGCGeneratorContent() {
             if (!fullCampaign) throw new Error("Detalhes da campanha não encontrados");
 
             // 2. Call AI Backend
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ugc`, {
+            const response = await apiFetch("/api/ugc", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     product_name: fullCampaign.products.name,
                     audience_name: fullCampaign.audiences.name,
@@ -84,7 +85,8 @@ function UGCGeneratorContent() {
 
         } catch (error) {
             console.error(error);
-            alert("Erro ao gerar roteiro. Verifique se o Backend está rodando.");
+            toast.error("Erro ao gerar roteiro. Verifique se o Backend está rodando.");
+        } finally {
             setIsGenerating(false);
         }
     };
@@ -105,10 +107,10 @@ function UGCGeneratorContent() {
             });
 
             if (error) throw error;
-            alert("Salvo com sucesso!");
+            toast.success("Salvo com sucesso!");
         } catch (error) {
             console.error(error);
-            alert("Erro ao salvar.");
+            toast.error("Erro ao salvar.");
         } finally {
             setIsSaving(false);
         }
@@ -210,7 +212,7 @@ function UGCGeneratorContent() {
                                 <div>
                                     <h2 className="text-xl font-bold text-white mb-1">{generatedScript.title}</h2>
                                     <div className="flex items-center gap-2 text-sm text-gray-400">
-                                        <span className="bg-neon/20 text-neon px-2 py-0.5 rounded textxs font-mono">HOOK</span>
+                                        <span className="bg-neon/20 text-neon px-2 py-0.5 rounded text-xs font-mono">HOOK</span>
                                         "{generatedScript.hook}"
                                     </div>
                                 </div>

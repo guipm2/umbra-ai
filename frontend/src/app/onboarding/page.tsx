@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight, Link as LinkIcon, Lock, Loader2, ScanLine } from "lucide-react";
 import Image from "next/image";
@@ -9,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { VoiceAnalysisChart } from "@/components/dashboard/voice-analysis-chart";
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [step, setStep] = useState<"url" | "account" | "radar">("url");
   const [url, setUrl] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -181,7 +183,7 @@ export default function OnboardingPage() {
               </div>
 
               <button
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={() => router.push('/dashboard')}
                 className="px-10 py-4 rounded-full bg-white text-black font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)]"
               >
                 Acessar Dashboard

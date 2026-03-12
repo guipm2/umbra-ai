@@ -23,6 +23,7 @@ import {
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { generateContent } from "@/actions/ai";
 import ReactMarkdown from "react-markdown";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
@@ -171,10 +172,10 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
       });
 
       if (error) throw error;
-      alert("Texto salvo na biblioteca!");
+      toast.success("Texto salvo na biblioteca!");
     } catch (error) {
       console.error(error);
-      alert("Erro ao salvar texto.");
+      toast.error("Erro ao salvar texto.");
     } finally {
       setIsSaving(false);
     }

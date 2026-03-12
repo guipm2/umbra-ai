@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, Loader2, ChevronRight, Box, Users, UserCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 
@@ -91,7 +92,7 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
             setEditingItem(null);
             setFormData({});
         } catch (error) {
-            alert("Erro ao salvar. Verifique o console.");
+            toast.error("Erro ao salvar. Verifique o console.");
             console.error(error);
         } finally {
             setSaving(false);

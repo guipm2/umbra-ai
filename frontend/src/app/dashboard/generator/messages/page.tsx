@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { Loader2, MessageSquare, Copy, Check, Send } from "lucide-react";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 
 function MessagesGeneratorContent() {
     const { user } = useAuth();
@@ -56,9 +58,8 @@ Crie mensagens para...`; // Prompt starter
 
         setIsGenerating(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/message`, {
+            const response = await apiFetch("/api/message", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     context: context,
                     tone: tone
@@ -72,7 +73,7 @@ Crie mensagens para...`; // Prompt starter
 
         } catch (error) {
             console.error(error);
-            alert("Erro ao gerar mensagens. Verifique o backend.");
+            toast.error("Erro ao gerar mensagens. Verifique o backend.");
         } finally {
             setIsGenerating(false);
         }
@@ -100,10 +101,10 @@ Crie mensagens para...`; // Prompt starter
             });
 
             if (error) throw error;
-            alert("Salvo com sucesso!");
+            toast.success("Salvo com sucesso!");
         } catch (error) {
             console.error(error);
-            alert("Erro ao salvar.");
+            toast.error("Erro ao salvar.");
         } finally {
             setIsSaving(false);
         }

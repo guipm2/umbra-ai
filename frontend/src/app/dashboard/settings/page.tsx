@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { User, CreditCard, Bell, Shield, LogOut, Loader2, CheckCircle2, Search } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { safeGetItem, safeSetItem } from "@/lib/storage";
@@ -165,7 +166,7 @@ export default function SettingsPage() {
             router.refresh();
 
         } catch (error) {
-            alert('Erro ao fazer upload do avatar!');
+            toast.error('Erro ao fazer upload do avatar!');
             console.error(error);
         } finally {
             setUploading(false);
@@ -204,7 +205,7 @@ export default function SettingsPage() {
             setTimeout(() => setSuccess(false), 3000);
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Erro ao salvar perfil.');
+            toast.error('Erro ao salvar perfil.');
         } finally {
             setSaving(false);
         }

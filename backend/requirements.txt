@@ -11,5 +11,5 @@ pypdf
 python-docx
 python-multipart
 ddgs
-python-dotenv
-
+PyJWT
+slowapi

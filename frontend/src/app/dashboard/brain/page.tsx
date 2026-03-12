@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { safeSetItem } from "@/lib/storage";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 
 export default function BrainPage() {
     const { user } = useAuth();
@@ -50,7 +52,7 @@ export default function BrainPage() {
         // Update Cache
         safeSetItem('aura_brain_voice', localVoice);
         await refreshVoice();
-        alert("Voz salva! (Localmente)");
+        toast.success("Voz salva!");
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +64,7 @@ export default function BrainPage() {
         formData.append("file", file);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/brain/upload`, {
+            const response = await apiFetch("/api/brain/upload", {
                 method: "POST",
                 body: formData,
             });
@@ -83,11 +85,11 @@ export default function BrainPage() {
             const currentFiles = files || [];
             setFiles([newFile, ...currentFiles]);
 
-            alert(`Arquivo processado com sucesso: ${result.message}`);
+            toast.success(`Arquivo processado com sucesso: ${result.message}`);
 
         } catch (error: any) {
             console.error(error);
-            alert(`Erro ao enviar arquivo: ${error.message}`);
+            toast.error(`Erro ao enviar arquivo: ${error.message}`);
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";

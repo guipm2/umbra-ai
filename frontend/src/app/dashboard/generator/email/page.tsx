@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { Loader2, Mail, Send, Copy, ChevronRight, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 
 function EmailGeneratorContent() {
     const { user } = useAuth();
@@ -50,9 +52,8 @@ function EmailGeneratorContent() {
 
             if (!fullCampaign) throw new Error("Detalhes da campanha não encontrados");
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email`, {
+            const response = await apiFetch("/api/email", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     product_name: fullCampaign.products.name,
                     audience_name: fullCampaign.audiences.name,
@@ -67,7 +68,7 @@ function EmailGeneratorContent() {
 
         } catch (error) {
             console.error(error);
-            alert("Erro ao gerar e-mail. Verifique o backend.");
+            toast.error("Erro ao gerar e-mail. Verifique o backend.");
         } finally {
             setIsGenerating(false);
         }
@@ -89,10 +90,10 @@ function EmailGeneratorContent() {
             });
 
             if (error) throw error;
-            alert("Salvo com sucesso!");
+            toast.success("Salvo com sucesso!");
         } catch (error) {
             console.error(error);
-            alert("Erro ao salvar.");
+            toast.error("Erro ao salvar.");
         } finally {
             setIsSaving(false);
         }

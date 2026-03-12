@@ -2,9 +2,12 @@ from agno.knowledge import Knowledge as AgentKnowledge
 from agno.vectordb.pgvector import PgVector
 from agno.knowledge.embedder.openai import OpenAIEmbedder
 from dotenv import load_dotenv
+import logging
 import os
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 def get_knowledge_base():
     """
@@ -12,7 +15,7 @@ def get_knowledge_base():
     """
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
-        print("Aviso: DATABASE_URL não encontrado. Base de Conhecimento não funcionará.")
+        logger.warning("DATABASE_URL não configurado — Knowledge Base desabilitada.")
         return None
 
     try:
@@ -27,6 +30,6 @@ def get_knowledge_base():
             vector_db=vector_db,
         )
         return kb
-    except Exception as e:
-        print(f"Erro ao inicializar Base de Conhecimento: {e}")
+    except Exception:
+        logger.exception("Erro ao inicializar Base de Conhecimento")
         return None

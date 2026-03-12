@@ -2,16 +2,21 @@
 
 export async function askAnalyst(query: string) {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        if (!apiUrl) {
+            return { success: false, error: "API URL not configured" };
+        }
+
+        const response = await fetch(`${apiUrl}/api/analytics`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: query }),
             cache: 'no-store',
         });
 
         if (!response.ok) {
+            const errText = await response.text().catch(() => "");
+            console.error("Backend Error:", errText);
             throw new Error(`Analytics Service Error: ${response.status}`);
         }
 

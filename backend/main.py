@@ -1,17 +1,32 @@
-from fastapi import FastAPI, HTTPException, UploadFile
+import json
+import logging
+
+from fastapi import FastAPI, HTTPException, UploadFile, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+from auth import get_current_user
 from agents.content_agent import get_content_agent
 from agents.analytics_agent import get_analytics_agent
 from agents.ugc_agent import get_ugc_agent
-from knowledge_base import get_knowledge_base
-from agno.knowledge.document import Document
-from agent import get_agent
-import json
+from agents.static_ad_agent import get_static_ad_agent
+from agents.email_agent import get_email_agent
+from agents.message_agent import get_message_agent
+from agents.brain_agent import get_brain_agent, process_document
 
+logger = logging.getLogger(__name__)
+
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Umbra AI Backend")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Configure CORS
+# ---------------------------------------------------------------------------
+# CORS — explicit methods and headers only
+# ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -19,26 +34,57 @@ app.add_middleware(
         "https://umbra-ai.vercel.app",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 
-# Trigger Reload
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+
+# ---------------------------------------------------------------------------
+# Request models — with basic input length limits
+# ---------------------------------------------------------------------------
 class AgentRequest(BaseModel):
-    message: str
-    user_id: str = "default"
+    message: str = Field(..., min_length=1, max_length=10_000)
 
 class UGCRequest(BaseModel):
-    product_name: str
-    audience_name: str
-    expert_name: str
-    style: str
+    product_name: str = Field(..., min_length=1, max_length=500)
+    audience_name: str = Field(..., min_length=1, max_length=500)
+    expert_name: str = Field(..., min_length=1, max_length=500)
+    style: str = Field(..., min_length=1, max_length=200)
+
+class StaticAdRequest(BaseModel):
+    product_name: str = Field(..., min_length=1, max_length=500)
+    audience_name: str = Field(..., min_length=1, max_length=500)
+    offer: str = Field(..., min_length=1, max_length=2_000)
+
+class EmailRequest(BaseModel):
+    product_name: str = Field(..., min_length=1, max_length=500)
+    audience_name: str = Field(..., min_length=1, max_length=500)
+    objective: str = Field(..., min_length=1, max_length=2_000)
+
+class MessageRequest(BaseModel):
+    context: str = Field(..., min_length=1, max_length=5_000)
+    tone: str = Field(..., min_length=1, max_length=200)
+
+class BrainQueryRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=5_000)
 
 
-class DocumentRequest(BaseModel):
-    content: str
-    metadata: dict = {}
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _safe_parse_json(raw: str) -> dict:
+    """Parse AI response text as JSON, stripping markdown fences."""
+    cleaned = raw.replace("```json", "").replace("```", "").strip()
+    return json.loads(cleaned)
 
+
+# ---------------------------------------------------------------------------
+# Public endpoints (no auth required)
+# ---------------------------------------------------------------------------
 @app.get("/")
 def read_root():
     return {"message": "Backend da Umbra AI online"}
@@ -47,160 +93,149 @@ def read_root():
 def health_check():
     return {"status": "ok"}
 
+
+# ---------------------------------------------------------------------------
+# Protected endpoints — all require valid Supabase JWT
+# ---------------------------------------------------------------------------
 @app.post("/api/content")
-def generate_content(request: AgentRequest):
-    """
-    Endpoint for Content Agent (Editor).
-    Uses RAG to find user style.
-    """
+@limiter.limit("20/minute")
+def generate_content(request: Request, body: AgentRequest, user_id: str = Depends(get_current_user)):
     try:
-        agent = get_content_agent(user_id=request.user_id)
-        response = agent.run(request.message)
+        agent = get_content_agent(user_id=user_id)
+        response = agent.run(body.message)
         return {"response": response.content}
-    except Exception as e:
-        print(f"Erro no agente de conteúdo: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("Content agent error")
+        raise HTTPException(status_code=500, detail="Erro ao gerar conteúdo. Tente novamente.")
 
 @app.post("/api/analytics")
-def analyze_data(request: AgentRequest):
-    """
-    Endpoint for Analytics Agent (Web Search).
-    """
+@limiter.limit("20/minute")
+def analyze_data(request: Request, body: AgentRequest, user_id: str = Depends(get_current_user)):
     try:
         agent = get_analytics_agent()
-        response = agent.run(request.message)
+        response = agent.run(body.message)
         return {"response": response.content}
-    except Exception as e:
-        print(f"Erro no agente de análise: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("Analytics agent error")
+        raise HTTPException(status_code=500, detail="Erro na análise. Tente novamente.")
 
 @app.post("/api/ugc")
-def generate_ugc(request: UGCRequest):
-    """
-    Generate a Viral Video Script based on structured inputs.
-    """
+@limiter.limit("10/minute")
+def generate_ugc(request: Request, body: UGCRequest, user_id: str = Depends(get_current_user)):
     try:
         agent = get_ugc_agent()
-        
         prompt = f"""
         Crie um roteiro de vídeo viral UGC.
-        Produto: {request.product_name}
-        Público Alvo: {request.audience_name}
-        Persona da Marca/Especialista: {request.expert_name}
-        Estilo do Vídeo: {request.style}
+        Produto: {body.product_name}
+        Público Alvo: {body.audience_name}
+        Persona da Marca/Especialista: {body.expert_name}
+        Estilo do Vídeo: {body.style}
         """
-        
         response = agent.run(prompt)
-        
-        # Parse JSON from response
-        content_str = response.content.replace('```json', '').replace('```', '').strip()
-        script_json = json.loads(content_str)
-        
-        return script_json
-    except Exception as e:
-        print(f"Erro no Agente de UGC: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# --- New Agents ---
-
-from agents.static_ad_agent import get_static_ad_agent
-from agents.email_agent import get_email_agent
-from agents.message_agent import get_message_agent
-
-class StaticAdRequest(BaseModel):
-    product_name: str
-    audience_name: str
-    offer: str
-
-class EmailRequest(BaseModel):
-    product_name: str
-    audience_name: str
-    objective: str
-
-class MessageRequest(BaseModel):
-    context: str
-    tone: str
+        return _safe_parse_json(response.content)
+    except json.JSONDecodeError:
+        logger.exception("UGC agent returned invalid JSON")
+        raise HTTPException(status_code=502, detail="Resposta inválida do agente de IA.")
+    except Exception:
+        logger.exception("UGC agent error")
+        raise HTTPException(status_code=500, detail="Erro ao gerar roteiro UGC. Tente novamente.")
 
 @app.post("/api/static-ad")
-def generate_static_ad(request: StaticAdRequest):
+@limiter.limit("10/minute")
+def generate_static_ad(request: Request, body: StaticAdRequest, user_id: str = Depends(get_current_user)):
     try:
         agent = get_static_ad_agent()
-        prompt = f"Produto: {request.product_name}\nPúblico: {request.audience_name}\nOferta/Objetivo: {request.offer}"
+        prompt = f"Produto: {body.product_name}\nPúblico: {body.audience_name}\nOferta/Objetivo: {body.offer}"
         response = agent.run(prompt)
-        return json.loads(response.content.replace('```json', '').replace('```', '').strip())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return _safe_parse_json(response.content)
+    except json.JSONDecodeError:
+        logger.exception("Static ad agent returned invalid JSON")
+        raise HTTPException(status_code=502, detail="Resposta inválida do agente de IA.")
+    except Exception:
+        logger.exception("Static ad agent error")
+        raise HTTPException(status_code=500, detail="Erro ao gerar anúncio. Tente novamente.")
 
 @app.post("/api/email")
-def generate_email(request: EmailRequest):
+@limiter.limit("10/minute")
+def generate_email(request: Request, body: EmailRequest, user_id: str = Depends(get_current_user)):
     try:
         agent = get_email_agent()
-        prompt = f"Produto: {request.product_name}\nPúblico: {request.audience_name}\nObjetivo: {request.objective}"
+        prompt = f"Produto: {body.product_name}\nPúblico: {body.audience_name}\nObjetivo: {body.objective}"
         response = agent.run(prompt)
-        return json.loads(response.content.replace('```json', '').replace('```', '').strip())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return _safe_parse_json(response.content)
+    except json.JSONDecodeError:
+        logger.exception("Email agent returned invalid JSON")
+        raise HTTPException(status_code=502, detail="Resposta inválida do agente de IA.")
+    except Exception:
+        logger.exception("Email agent error")
+        raise HTTPException(status_code=500, detail="Erro ao gerar e-mail. Tente novamente.")
 
 @app.post("/api/message")
-def generate_message(request: MessageRequest):
+@limiter.limit("10/minute")
+def generate_message(request: Request, body: MessageRequest, user_id: str = Depends(get_current_user)):
     try:
         agent = get_message_agent()
-        prompt = f"Contexto: {request.context}\nTom de voz: {request.tone}"
+        prompt = f"Contexto: {body.context}\nTom de voz: {body.tone}"
         response = agent.run(prompt)
-        return json.loads(response.content.replace('```json', '').replace('```', '').strip())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-from agents.brain_agent import get_brain_agent, process_document
-
-class BrainQueryRequest(BaseModel):
-    query: str
-    user_id: str = "default"
+        return _safe_parse_json(response.content)
+    except json.JSONDecodeError:
+        logger.exception("Message agent returned invalid JSON")
+        raise HTTPException(status_code=502, detail="Resposta inválida do agente de IA.")
+    except Exception:
+        logger.exception("Message agent error")
+        raise HTTPException(status_code=500, detail="Erro ao gerar mensagem. Tente novamente.")
 
 @app.post("/api/brain/upload")
-async def upload_knowledge(file: UploadFile): # Removed metadata/DocumentRequest dependency for simplicity
+@limiter.limit("5/minute")
+async def upload_knowledge(request: Request, file: UploadFile, user_id: str = Depends(get_current_user)):
     try:
-        # TODO: Get user_id from auth token (future task)
-        result = await process_document(file, user_id="default")
+        # --- File size check ---
+        contents = await file.read()
+        if len(contents) > MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Arquivo excede o limite de {MAX_UPLOAD_SIZE // (1024*1024)}MB.",
+            )
+        await file.seek(0)
+
+        result = await process_document(file, user_id=user_id)
         return result
-    except Exception as e:
-        print(f"Ingestion Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Upload error")
+        raise HTTPException(status_code=500, detail="Erro ao processar documento.")
 
 @app.post("/api/brain/query")
-def query_brain(request: BrainQueryRequest):
+@limiter.limit("20/minute")
+def query_brain(request: Request, body: BrainQueryRequest, user_id: str = Depends(get_current_user)):
     try:
         agent = get_brain_agent()
         if not agent:
-             return {"response": "Base de Conhecimento não configurada."}
-             
-        response = agent.run(request.query)
+            return {"response": "Base de Conhecimento não configurada."}
+
+        response = agent.run(body.query)
         return {"response": response.content}
-    except Exception as e:
-         print(f"Erro na consulta ao Cérebro: {e}")
-         raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("Brain query error")
+        raise HTTPException(status_code=500, detail="Erro na consulta. Tente novamente.")
 
 @app.post("/api/chat")
-def chat_interceptor(request: AgentRequest):
-    """
-    Main Chat Interface Endpoint.
-    Uses the Interceptor Agent to route requests or answer directly.
-    """
+@limiter.limit("30/minute")
+def chat_interceptor(request: Request, body: AgentRequest, user_id: str = Depends(get_current_user)):
     try:
-        agent = get_agent(user_id=request.user_id)
-        response = agent.run(request.message)
-        
-        # Check if response attempts to be JSON (Action)
+        from agent import get_agent
+        agent = get_agent(user_id=user_id)
+        response = agent.run(body.message)
+
         content = response.content
         try:
-             # Try to parse if it looks like JSON
-            if content.strip().startswith('{') and content.strip().endswith('}'):
-                json_content = json.loads(content)
-                return json_content
+            if content.strip().startswith("{") and content.strip().endswith("}"):
+                return json.loads(content)
         except json.JSONDecodeError:
-            pass # Not JSON, just return text
-            
+            pass
+
         return {"response": content}
-    except Exception as e:
-        print(f"Erro no Chat Interceptador: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("Chat interceptor error")
+        raise HTTPException(status_code=500, detail="Erro no chat. Tente novamente.")

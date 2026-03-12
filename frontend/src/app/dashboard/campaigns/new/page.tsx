@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { safeRemoveItem } from "@/lib/storage";
 import { Loader2, ChevronRight, ChevronLeft, Package, Users, UserCheck, Target } from "lucide-react";
+import { toast } from "sonner";
 
 const STEPS = [
     { id: 1, title: "Produto" },
@@ -61,16 +62,16 @@ export default function NewCampaignPage() {
     const [objective, setObjective] = useState("Vendas Diretas");
 
     const handleNext = () => {
-        if (currentStep === 1 && !selectedProduct) return alert("Selecione um produto");
-        if (currentStep === 2 && !selectedAudience) return alert("Selecione um público");
-        if (currentStep === 3 && !selectedExpert) return alert("Selecione um expert");
+        if (currentStep === 1 && !selectedProduct) { toast.error("Selecione um produto"); return; }
+        if (currentStep === 2 && !selectedAudience) { toast.error("Selecione um público"); return; }
+        if (currentStep === 3 && !selectedExpert) { toast.error("Selecione um expert"); return; }
 
         if (currentStep < 4) setCurrentStep(curr => curr + 1);
         else handleFinish();
     };
 
     const handleFinish = async () => {
-        if (!campaignName) return alert("Dê um nome para a campanha");
+        if (!campaignName) { toast.error("Dê um nome para a campanha"); return; }
 
         setLoading(true);
         try {
@@ -93,7 +94,7 @@ export default function NewCampaignPage() {
             router.push('/dashboard/campaigns');
         } catch (error) {
             console.error(error);
-            alert("Erro ao criar campanha");
+            toast.error("Erro ao criar campanha");
         } finally {
             setLoading(false);
         }

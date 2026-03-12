@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-context";
+import { apiFetch } from "@/lib/api";
 
 
 interface Message {
@@ -72,14 +73,10 @@ export function AiChatbox() {
 
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat`, {
+      const response = await apiFetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           message: messageText,
-          user_id: user?.id || "guest",
         }),
       });
 
