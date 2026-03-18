@@ -2,10 +2,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence, useScroll, useSpring, animate } from "framer-motion";
+import { motion, AnimatePresence, animate } from "framer-motion";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Sparkles, Menu, X, ArrowLeft } from "lucide-react";
+import { Menu, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 
 export function Navbar() {

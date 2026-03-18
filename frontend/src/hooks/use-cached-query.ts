@@ -32,7 +32,6 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true, m
     // Provides synchronous access inside callbacks without adding state deps.
     const dataRef = useRef<T>(initialData as T);
     const hasRealData = useRef(false);
-    const initialDataRef = useRef(initialData);
 
     const setData = useCallback((value: T) => {
         dataRef.current = value;

@@ -406,13 +406,13 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
                 {content ? (
                   <ReactMarkdown
                     components={{
-                      strong: ({ node, ...props }) => <span className="font-bold text-gray-100" {...props} />,
-                      em: ({ node, ...props }) => <span className="italic text-gray-300" {...props} />,
-                      a: ({ node, ...props }) => <a className="text-blue-400 hover:underline" {...props} />,
-                      ul: ({ node, ...props }) => <ul className="list-disc pl-4 space-y-1 my-2" {...props} />,
-                      ol: ({ node, ...props }) => <ol className="list-decimal pl-4 space-y-1 my-2" {...props} />,
-                      li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                      p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />
+                      strong: (props) => <span className="font-bold text-gray-100" {...props} />,
+                      em: (props) => <span className="italic text-gray-300" {...props} />,
+                      a: (props) => <a className="text-blue-400 hover:underline" {...props} />,
+                      ul: (props) => <ul className="list-disc pl-4 space-y-1 my-2" {...props} />,
+                      ol: (props) => <ol className="list-decimal pl-4 space-y-1 my-2" {...props} />,
+                      li: (props) => <li className="pl-1" {...props} />,
+                      p: (props) => <p className="mb-2 last:mb-0" {...props} />
                     }}
                   >
                     {displayContent}

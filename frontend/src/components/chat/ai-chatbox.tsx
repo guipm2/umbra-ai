@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   X,
   Send,
-  Sparkles,
   ChevronDown,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/components/auth/auth-context";
 import { apiFetch } from "@/lib/api";
 
 
@@ -31,7 +29,6 @@ const quickSuggestions = [
 
 export function AiChatbox() {
   const router = useRouter();
-  const { user } = useAuth(); // Hook for navigation actions
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([

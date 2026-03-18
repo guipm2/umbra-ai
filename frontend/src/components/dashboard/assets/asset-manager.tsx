@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Search, Edit, Trash2, Loader2, ChevronRight, Box, Users, UserCheck } from "lucide-react";
+import { useState } from "react";
+import { Plus, Search, Edit, Trash2, Loader2, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
@@ -19,9 +18,9 @@ interface AssetManagerProps {
     title: string;
     description: string;
     tableName: "products" | "audiences" | "experts";
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     fields: AssetField[];
-    renderCard: (item: any) => React.ReactNode;
+    renderCard: (item: Record<string, any>) => React.ReactNode;
 }
 
 export function AssetManager({ title, description, tableName, icon: Icon, fields, renderCard }: AssetManagerProps) {
@@ -47,7 +46,7 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
 
     const [searchTerm, setSearchTerm] = useState("");
     const [isCreating, setIsCreating] = useState(false);
-    const [editingItem, setEditingItem] = useState<any | null>(null);
+    const [editingItem, setEditingItem] = useState<Record<string, any> | null>(null);
 
     // Form State
     const [formData, setFormData] = useState<Record<string, any>>({});
@@ -113,7 +112,7 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
         }
     }
 
-    const openEditor = (item?: any) => {
+    const openEditor = (item?: Record<string, any>) => {
         if (item) {
             setEditingItem(item);
             setFormData(item);
