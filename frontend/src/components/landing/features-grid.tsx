@@ -4,7 +4,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { VoiceAnalysisChart } from "@/components/dashboard/voice-analysis-chart";
 import { useState, useEffect } from "react";
-import { PenTool, Activity, Hash, Sparkles, TrendingUp, Search, MessageSquare } from "lucide-react";
+import { PenTool, Activity, Hash, Sparkles, Search, MessageSquare } from "lucide-react";
 
 // Demos Scenarios
 const scenarios = [
@@ -152,7 +152,7 @@ function GhostwriterDemo() {
                         >
                             {/* Tags + Visualization */}
                             <div className="flex flex-wrap gap-2">
-                                {scenario.tags.map((tag, idx) => (
+                                {scenario.tags.map((tag) => (
                                     <span
                                         key={tag.label}
                                         className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1

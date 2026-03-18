@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { useCachedQuery } from "@/hooks/use-cached-query";
-import { Loader2, Mail, Send, Copy, ChevronRight, User } from "lucide-react";
+import { Loader2, Mail, Send, Copy, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";

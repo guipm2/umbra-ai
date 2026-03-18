@@ -6,7 +6,6 @@ import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { Loader2, Smartphone, Video, Sparkles, ChevronRight, Copy, Check, PlayCircle } from "lucide-react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 
