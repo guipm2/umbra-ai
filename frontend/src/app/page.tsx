@@ -5,7 +5,6 @@ import { ProcessSection } from "@/components/landing/process-section";
 import { FeaturesGrid } from "@/components/landing/features-grid";
 import { UseCases } from "@/components/landing/use-cases";
 import { Pricing } from "@/components/landing/pricing";
-import { Footer } from "@/components/landing/footer";
 
 export default function LandingPage() {
   return (

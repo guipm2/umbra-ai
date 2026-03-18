@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Search, Megaphone, ArrowRight, Loader2, Calendar } from "lucide-react";
+import { Plus, Megaphone, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/auth-context";

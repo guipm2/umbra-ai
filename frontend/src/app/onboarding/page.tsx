@@ -4,9 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight, Link as LinkIcon, Lock, Loader2, ScanLine } from "lucide-react";
-import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+import { Sparkles, ArrowRight, Link as LinkIcon, Loader2, ScanLine } from "lucide-react";
 import { VoiceAnalysisChart } from "@/components/dashboard/voice-analysis-chart";
 
 export default function OnboardingPage() {
@@ -16,7 +14,6 @@ export default function OnboardingPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
   const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +30,6 @@ export default function OnboardingPage() {
   const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
 
     // Simulate creation for UX flow, then go to Radar
     // In real app: call supabase.auth.signUp() here

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
     Video,
@@ -11,7 +10,6 @@ import {
     Instagram,
     LayoutTemplate,
     Linkedin,
-    FileText,
     Zap
 } from "lucide-react";
 
