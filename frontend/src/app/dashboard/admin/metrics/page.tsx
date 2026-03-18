@@ -1,0 +1,215 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ShieldAlert, RefreshCw, Server, Activity, Clock3, Bot } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-context";
+import { apiFetch } from "@/lib/api";
+
+interface HttpRequestMetric {
+  method: string;
+  path: string;
+  status: string;
+  count: number;
+}
+
+interface AgentCallMetric {
+  agent: string;
+  status: string;
+  count: number;
+}
+
+interface AvgDurationMetric {
+  avg_ms: number;
+  count: number;
+  method?: string;
+  path?: string;
+  agent?: string;
+}
+
+interface AdminMetricsSummary {
+  request_id: string | null;
+  uptime_seconds: number;
+  http_requests_total: HttpRequestMetric[];
+  http_duration_ms_avg: AvgDurationMetric[];
+  agent_calls_total: AgentCallMetric[];
+  agent_duration_ms_avg: AvgDurationMetric[];
+}
+
+function formatUptime(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h}h ${m}m ${s}s`;
+}
+
+export default function AdminMetricsPage() {
+  const router = useRouter();
+  const { loading, isSuperAdmin } = useAuth();
+  const [data, setData] = useState<AdminMetricsSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refreshMetrics = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const response = await apiFetch("/api/admin/metrics-summary", { method: "GET" });
+      if (response.status === 403) {
+        setError("Você não possui permissão para acessar este painel.");
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(`Falha ao carregar métricas (${response.status})`);
+      }
+      const payload = (await response.json()) as AdminMetricsSummary;
+      setData(payload);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar métricas");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (loading) return;
+    if (!isSuperAdmin) {
+      router.replace("/dashboard");
+      return;
+    }
+    refreshMetrics();
+
+    const timer = setInterval(() => {
+      refreshMetrics();
+    }, 15000);
+
+    return () => clearInterval(timer);
+  }, [loading, isSuperAdmin, router]);
+
+  const totals = useMemo(() => {
+    if (!data) {
+      return {
+        totalHttpCalls: 0,
+        totalAgentCalls: 0,
+        totalAgentErrors: 0,
+      };
+    }
+
+    const totalHttpCalls = data.http_requests_total.reduce((acc, item) => acc + item.count, 0);
+    const totalAgentCalls = data.agent_calls_total.reduce((acc, item) => acc + item.count, 0);
+    const totalAgentErrors = data.agent_calls_total
+      .filter((item) => item.status === "error")
+      .reduce((acc, item) => acc + item.count, 0);
+
+    return { totalHttpCalls, totalAgentCalls, totalAgentErrors };
+  }, [data]);
+
+  if (loading || !isSuperAdmin) {
+    return (
+      <div className="p-8 text-gray-300">Validando acesso...</div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-[1800px] mx-auto p-6 md:p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <ShieldAlert className="h-6 w-6 text-red-400" />
+            Admin Metrics
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">Painel restrito a usuários com super acesso.</p>
+        </div>
+        <button
+          onClick={refreshMetrics}
+          disabled={refreshing}
+          className="px-4 py-2 rounded-lg bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-colors flex items-center gap-2 disabled:opacity-60"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          Atualizar
+        </button>
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-200 text-sm">
+          {error}
+        </div>
+      )}
+
+      {data && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="glass rounded-xl p-4 border border-white/10">
+              <div className="text-xs text-gray-400 uppercase">Uptime</div>
+              <div className="text-xl text-white font-bold mt-2 flex items-center gap-2"><Clock3 className="h-4 w-4 text-neon" />{formatUptime(data.uptime_seconds)}</div>
+            </div>
+            <div className="glass rounded-xl p-4 border border-white/10">
+              <div className="text-xs text-gray-400 uppercase">HTTP Calls</div>
+              <div className="text-xl text-white font-bold mt-2 flex items-center gap-2"><Server className="h-4 w-4 text-blue-400" />{totals.totalHttpCalls}</div>
+            </div>
+            <div className="glass rounded-xl p-4 border border-white/10">
+              <div className="text-xs text-gray-400 uppercase">Agent Calls</div>
+              <div className="text-xl text-white font-bold mt-2 flex items-center gap-2"><Bot className="h-4 w-4 text-green-400" />{totals.totalAgentCalls}</div>
+            </div>
+            <div className="glass rounded-xl p-4 border border-white/10">
+              <div className="text-xs text-gray-400 uppercase">Agent Errors</div>
+              <div className="text-xl text-white font-bold mt-2 flex items-center gap-2"><Activity className="h-4 w-4 text-red-400" />{totals.totalAgentErrors}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="glass rounded-xl border border-white/10 overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/10 text-sm text-white font-semibold">Top HTTP Requests</div>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-gray-400 uppercase bg-white/5">
+                    <tr>
+                      <th className="text-left px-4 py-2">Method</th>
+                      <th className="text-left px-4 py-2">Path</th>
+                      <th className="text-left px-4 py-2">Status</th>
+                      <th className="text-right px-4 py-2">Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.http_requests_total.map((item, idx) => (
+                      <tr key={`${item.method}-${item.path}-${item.status}-${idx}`} className="border-t border-white/5">
+                        <td className="px-4 py-2 text-gray-200">{item.method}</td>
+                        <td className="px-4 py-2 text-gray-300">{item.path}</td>
+                        <td className="px-4 py-2 text-gray-300">{item.status}</td>
+                        <td className="px-4 py-2 text-right text-white font-semibold">{item.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="glass rounded-xl border border-white/10 overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/10 text-sm text-white font-semibold">Agent Calls</div>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-gray-400 uppercase bg-white/5">
+                    <tr>
+                      <th className="text-left px-4 py-2">Agent</th>
+                      <th className="text-left px-4 py-2">Status</th>
+                      <th className="text-right px-4 py-2">Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.agent_calls_total.map((item, idx) => (
+                      <tr key={`${item.agent}-${item.status}-${idx}`} className="border-t border-white/5">
+                        <td className="px-4 py-2 text-gray-200">{item.agent}</td>
+                        <td className="px-4 py-2 text-gray-300">{item.status}</td>
+                        <td className="px-4 py-2 text-right text-white font-semibold">{item.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

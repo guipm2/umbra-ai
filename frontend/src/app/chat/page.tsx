@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { sendMessageToAgent } from '@/actions/chat';
+import { apiFetch } from '@/lib/api';
 
 export default function ChatPage() {
     const [input, setInput] = useState('');
@@ -17,13 +17,23 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, { role: 'user', content: userMsg }]);
         setLoading(true);
 
-        const result = await sendMessageToAgent(userMsg);
+        try {
+            const response = await apiFetch('/api/chat', {
+                method: 'POST',
+                body: JSON.stringify({ message: userMsg }),
+            });
 
-        setLoading(false);
-        if (result.success && result.message) {
-            setMessages((prev) => [...prev, { role: 'agent', content: result.message }]);
-        } else {
+            if (!response.ok) {
+                throw new Error('Could not reach agent');
+            }
+
+            const data = await response.json();
+            const message = typeof data?.response === 'string' ? data.response : JSON.stringify(data);
+            setMessages((prev) => [...prev, { role: 'agent', content: message }]);
+        } catch {
             setMessages((prev) => [...prev, { role: 'agent', content: 'Error: Could not reach agent.' }]);
+        } finally {
+            setLoading(false);
         }
     };
 

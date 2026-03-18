@@ -24,9 +24,9 @@ import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { generateContent } from "@/actions/ai";
+import { apiFetch } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import {
   Popover,
   PopoverContent,
@@ -104,14 +104,25 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
 
     setIsGenerating(true);
 
-    // Call AI Agent
-    const result = await generateContent(content);
+    try {
+      const response = await apiFetch("/api/content", {
+        method: "POST",
+        body: JSON.stringify({ message: content }),
+      });
 
-    if (result.success && result.content) {
-      simulateTyping(result.content);
-    } else {
-      // Optional: Show error toast
-      console.error("AI Generation failed");
+      if (!response.ok) {
+        throw new Error("AI Generation failed");
+      }
+
+      const data = await response.json();
+      if (typeof data?.response !== "string") {
+        throw new Error("Invalid response format");
+      }
+
+      simulateTyping(data.response);
+    } catch (error) {
+      console.error("AI Generation failed", error);
+      toast.error("Erro ao gerar conteudo. Verifique sua sessao e o backend.");
       setIsGenerating(false);
     }
   };
@@ -268,8 +279,8 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
                 </PopoverTrigger>
                 <PopoverContent className="w-full border-none p-0 bg-transparent shadow-none" sideOffset={5} align="start">
                   <EmojiPicker
-                    theme={"dark" as any}
-                    onEmojiClick={(emojiData) => insertText(emojiData.emoji)}
+                    theme={Theme.DARK}
+                    onEmojiClick={(emojiData: EmojiClickData) => insertText(emojiData.emoji)}
                     lazyLoadEmojis={true}
                   />
                 </PopoverContent>

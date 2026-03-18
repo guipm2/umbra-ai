@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
@@ -16,6 +16,7 @@ interface AuthContextType {
     user: User | null;
     profile: UserProfile | null;
     session: Session | null;
+    isSuperAdmin: boolean;
     loading: boolean;
     signOut: () => Promise<void>;
 }
@@ -24,18 +25,47 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     profile: null,
     session: null,
+    isSuperAdmin: false,
     loading: true,
     signOut: async () => { },
 });
+
+const SUPER_ADMIN_ROLES = new Set(["super_admin", "admin", "owner"]);
+
+function hasSuperAdminAccess(user: User | null, profile: UserProfile | null): boolean {
+    const roleCandidates = [
+        profile?.subscription_tier,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (user?.app_metadata as any)?.role,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (user?.user_metadata as any)?.role,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (user?.user_metadata as any)?.subscription_tier,
+    ]
+        .filter(Boolean)
+        .map((v) => String(v).toLowerCase().trim());
+
+    if (roleCandidates.some((role) => SUPER_ADMIN_ROLES.has(role))) {
+        return true;
+    }
+
+    const allowlistEmails = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAILS || "")
+        .split(",")
+        .map((e) => e.toLowerCase().trim())
+        .filter(Boolean);
+
+    return !!user?.email && allowlistEmails.includes(user.email.toLowerCase());
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [session, setSession] = useState<Session | null>(null);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
     const profileFetchRef = useRef<Promise<void> | null>(null);
 
-    const fetchProfile = (userId: string) => {
+    const fetchProfile = useCallback((sessionUser: User, userId: string) => {
         // Deduplicate: if a fetch is already in-flight, reuse it
         if (profileFetchRef.current) return profileFetchRef.current;
 
@@ -49,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 if (!error && data) {
                     setProfile(data);
+                    setIsSuperAdmin(hasSuperAdminAccess(sessionUser, data));
                 }
             } catch (error) {
                 console.error("Error fetching profile", error);
@@ -59,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         profileFetchRef.current = promise;
         return promise;
-    };
+    }, []);
 
     useEffect(() => {
         // Check active sessions and sets the user
@@ -70,8 +101,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 } = await supabase.auth.getSession();
                 setSession(session);
                 setUser(session?.user ?? null);
+                setIsSuperAdmin(hasSuperAdminAccess(session?.user ?? null, null));
                 if (session?.user) {
-                    await fetchProfile(session.user.id);
+                    await fetchProfile(session.user, session.user.id);
                 }
             } catch (error) {
                 console.error("[auth] Error getting session:", error);
@@ -98,13 +130,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             setSession(session);
             setUser(session?.user ?? null);
+            setIsSuperAdmin(hasSuperAdminAccess(session?.user ?? null, null));
 
             if (session?.user) {
                 // Fire-and-forget: never await inside onAuthStateChange
                 // to prevent blocking the Supabase auth lock.
-                fetchProfile(session.user.id);
+                fetchProfile(session.user, session.user.id);
             } else {
                 setProfile(null);
+                setIsSuperAdmin(false);
             }
             setLoading(false);
         });
@@ -112,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => {
             subscription.unsubscribe();
         };
-    }, []);
+    }, [fetchProfile]);
 
     const signOut = async () => {
         await supabase.auth.signOut();
@@ -120,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, profile, session, loading, signOut }}>
+        <AuthContext.Provider value={{ user, profile, session, isSuperAdmin, loading, signOut }}>
             {children}
         </AuthContext.Provider>
     );

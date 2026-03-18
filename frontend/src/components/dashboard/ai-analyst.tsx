@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Search, Globe, ArrowRight } from "lucide-react";
-import { askAnalyst } from "@/actions/analytics";
-import { cn } from "@/lib/utils";
+import { Sparkles, Globe, ArrowRight } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 export function AIAnalyst() {
     const [query, setQuery] = useState("");
@@ -15,13 +14,22 @@ export function AIAnalyst() {
         setLoading(true);
         setResult("");
 
-        const response = await askAnalyst(query);
+        try {
+            const response = await apiFetch("/api/analytics", {
+                method: "POST",
+                body: JSON.stringify({ message: query }),
+            });
 
-        setLoading(false);
-        if (response.success && response.analysis) {
-            setResult(response.analysis);
-        } else {
+            if (!response.ok) {
+                throw new Error("Analyst request failed");
+            }
+
+            const data = await response.json();
+            setResult(typeof data?.response === "string" ? data.response : "Resposta invalida do analista.");
+        } catch {
             setResult("Erro ao conectar com o Analista. Verifique o backend.");
+        } finally {
+            setLoading(false);
         }
     };
 

@@ -1,5 +1,6 @@
 import io
 import logging
+import hashlib
 
 import pypdf
 import docx
@@ -9,6 +10,7 @@ from agno.knowledge.document import Document
 from fastapi import UploadFile
 
 from knowledge_base import get_knowledge_base
+from agents.prompt_library import brain_agent_instructions
 
 logger = logging.getLogger(__name__)
 
@@ -24,21 +26,19 @@ ALLOWED_TYPES = {
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
-def get_brain_agent():
+def get_brain_agent(user_id: str):
     kb = get_knowledge_base()
     if not kb:
         return None
 
     return Agent(
         model=OpenAIChat(id="gpt-4o"),
+        user_id=user_id,
         knowledge=kb,
+        knowledge_filters={"user_id": user_id},
         search_knowledge=True,
         description="Você é o Cérebro da empresa. Você tem acesso a todos os documentos internos.",
-        instructions=[
-            "Sempre pesquise sua base de conhecimento primeiro.",
-            "Se a resposta for encontrada nos documentos, cite a fonte.",
-            "Se não encontrar, use seu conhecimento geral mas mencione isso.",
-        ],
+        instructions=brain_agent_instructions(),
     )
 
 
@@ -94,6 +94,7 @@ async def process_document(file: UploadFile, user_id: str):
 
         kb = get_knowledge_base()
         if kb:
+            content_hash = hashlib.sha256(f"{user_id}:{filename}".encode("utf-8")).hexdigest()
             doc = Document(
                 content=content,
                 meta_data={
@@ -102,7 +103,7 @@ async def process_document(file: UploadFile, user_id: str):
                     "type": file_type,
                 },
             )
-            kb.vector_db.upsert(content_hash=filename, documents=[doc])
+            kb.vector_db.upsert(content_hash=content_hash, documents=[doc])
             return {"status": "success", "message": f"Documento processado com sucesso: {filename}"}
 
         return {"status": "error", "message": "Base de Conhecimento indisponível."}

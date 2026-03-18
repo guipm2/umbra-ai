@@ -13,3 +13,4 @@ python-multipart
 ddgs
 PyJWT
 slowapi
+prometheus-client

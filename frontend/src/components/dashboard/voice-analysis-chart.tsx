@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   Radar,
   RadarChart,
@@ -22,12 +21,6 @@ const voiceData = [
 ];
 
 export function VoiceAnalysisChart() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div className="glass rounded-2xl p-6 neon-glow">
       <div className="mb-4 flex items-center justify-between">
@@ -50,59 +43,53 @@ export function VoiceAnalysisChart() {
       </div>
 
       <div className="h-[280px] w-full">
-        {!mounted ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Carregando gráfico...
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={voiceData} cx="50%" cy="50%" outerRadius="75%">
-              <PolarGrid
-                stroke="rgba(157, 80, 187, 0.15)"
-                strokeDasharray="3 3"
-              />
-              <PolarAngleAxis
-                dataKey="trait"
-                tick={{
-                  fill: "#888888",
-                  fontSize: 12,
-                  fontWeight: 500,
-                }}
-              />
-              <PolarRadiusAxis
-                angle={90}
-                domain={[0, 100]}
-                tick={false}
-                axisLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(20, 16, 28, 0.9)",
-                  border: "1px solid rgba(157, 80, 187, 0.3)",
-                  borderRadius: "8px",
-                  backdropFilter: "blur(12px)",
-                  color: "#EAEAEA",
-                  fontSize: "13px",
-                }}
-                formatter={(value) => [`${value}%`, "Score"]}
-              />
-              <Radar
-                name="Tom de Voz"
-                dataKey="value"
-                stroke="#9D50BB"
-                strokeWidth={2}
-                fill="#9D50BB"
-                fillOpacity={0.15}
-                dot={{
-                  r: 4,
-                  fill: "#E082FF",
-                  stroke: "#9D50BB",
-                  strokeWidth: 2,
-                }}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        )}
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={voiceData} cx="50%" cy="50%" outerRadius="75%">
+            <PolarGrid
+              stroke="rgba(157, 80, 187, 0.15)"
+              strokeDasharray="3 3"
+            />
+            <PolarAngleAxis
+              dataKey="trait"
+              tick={{
+                fill: "#888888",
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            />
+            <PolarRadiusAxis
+              angle={90}
+              domain={[0, 100]}
+              tick={false}
+              axisLine={false}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "rgba(20, 16, 28, 0.9)",
+                border: "1px solid rgba(157, 80, 187, 0.3)",
+                borderRadius: "8px",
+                backdropFilter: "blur(12px)",
+                color: "#EAEAEA",
+                fontSize: "13px",
+              }}
+              formatter={(value) => [`${value}%`, "Score"]}
+            />
+            <Radar
+              name="Tom de Voz"
+              dataKey="value"
+              stroke="#9D50BB"
+              strokeWidth={2}
+              fill="#9D50BB"
+              fillOpacity={0.15}
+              dot={{
+                r: 4,
+                fill: "#E082FF",
+                stroke: "#9D50BB",
+                strokeWidth: 2,
+              }}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Top traits */}

@@ -2,6 +2,8 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools.duckduckgo import DuckDuckGoTools
 from knowledge_base import get_knowledge_base
+from agents.prompt_library import content_agent_instructions
+from agents.research_tools import search_web, discover_copy_trends, benchmark_angle_scan
 
 def get_content_agent(user_id: str = "default"):
     """
@@ -12,19 +14,14 @@ def get_content_agent(user_id: str = "default"):
     
     agent = Agent(
         model=OpenAIChat(id="gpt-4o-mini"),
+        user_id=user_id,
         description="Você é um Editor e Criador de Conteúdo de IA especialista.",
-        instructions=[
-            "Seu objetivo é gerar textos de alta qualidade com base nas solicitações do usuário.",
-            "Você DEVE adaptar seu estilo de escrita à Voz do Usuário encontrada na base de conhecimento.",
-            "Se encontrar contexto na base de conhecimento, priorize-o.",
-            "Use a ferramenta DuckDuckGo para buscar informações na internet em tempo real se o usuário mencionar eventos recentes específicos ou fatos que você não conhece.",
-            "Retorne APENAS o conteúdo gerado, pronto para ser inserido no editor.",
-            "Não adicione conversas desnecessárias como 'Aqui está o post:'. Apenas o conteúdo."
-        ],
-        tools=[DuckDuckGoTools()],
+        instructions=content_agent_instructions(),
+        tools=[DuckDuckGoTools(), search_web, discover_copy_trends, benchmark_angle_scan],
         knowledge=kb,
+        knowledge_filters={"user_id": user_id} if kb is not None else None,
         search_knowledge=kb is not None, # Only enable if KB is valid
         markdown=True,
-        show_tool_calls=True,
+        show_tool_calls=False,
     )
     return agent

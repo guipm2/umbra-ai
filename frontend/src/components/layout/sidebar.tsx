@@ -8,10 +8,8 @@ import {
   PenTool,
   BrainCircuit,
   Settings,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
-  User,
   BarChart3,
   X,
   Package,
@@ -27,12 +25,32 @@ import {
   Linkedin,
   Instagram,
   ChevronDown,
+  Shield,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
 import { useAuth } from "@/components/auth/auth-context";
 
-const navGroups = [
+interface NavSubItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  subItems?: NavSubItem[];
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
     title: "Estratégia",
     items: [
@@ -137,7 +155,7 @@ const bottomItems = [
 
 export function Sidebar() {
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
-  const { user, profile } = useAuth();
+  const { user, profile, isSuperAdmin } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
@@ -152,7 +170,6 @@ export function Sidebar() {
             if (base !== pathname) return false;
             if (query) {
               const params = new URLSearchParams(query);
-              // @ts-ignore
               for (const [k, v] of params.entries()) {
                 if (searchParams?.get(k) !== v) return false;
               }
@@ -234,23 +251,19 @@ export function Sidebar() {
             )}
             {group.items.map((item) => {
               const isActive = pathname === item.href;
-              // @ts-ignore
-              const hasSubItems = item.subItems && item.subItems.length > 0;
-              // @ts-ignore
+              const hasSubItems = (item.subItems?.length ?? 0) > 0;
               const isOpen = openMenus.includes(item.label);
-              // @ts-ignore
-              const isChildActive = hasSubItems && item.subItems.some(sub => {
+              const isChildActive = item.subItems?.some((sub) => {
                 const [base, query] = sub.href.split('?');
                 if (base !== pathname) return false;
                 if (query) {
                   const params = new URLSearchParams(query);
-                  // @ts-ignore
                   for (const [k, v] of params.entries()) {
                     if (searchParams?.get(k) !== v) return false;
                   }
                 }
                 return true;
-              });
+              }) ?? false;
 
               return (
                 <div key={item.href} className="space-y-1">
@@ -279,7 +292,6 @@ export function Sidebar() {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          // @ts-ignore
                           toggleMenu(item.label);
                         }}
                         className={cn(
@@ -293,17 +305,14 @@ export function Sidebar() {
                   </div>
 
                   {/* Sub-items */}
-                  {/* @ts-ignore */}
                   {hasSubItems && isOpen && showLabels && (
                     <div className="ml-9 space-y-1 border-l border-white/10 pl-2 animate-in slide-in-from-top-2 fade-in duration-200">
-                      {/* @ts-ignore */}
-                      {item.subItems.map((sub) => {
+                      {item.subItems?.map((sub) => {
                         const [base, query] = sub.href.split('?');
                         let isSubActive = base === pathname;
 
                         if (isSubActive && query) {
                           const params = new URLSearchParams(query);
-                          // @ts-ignore
                           for (const [k, v] of params.entries()) {
                             if (searchParams?.get(k) !== v) {
                               isSubActive = false;
@@ -340,6 +349,22 @@ export function Sidebar() {
 
       {/* Bottom section */}
       <div className="border-t border-border px-3 py-4 space-y-1">
+        {isSuperAdmin && (
+          <Link
+            href="/dashboard/admin/metrics"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+              pathname === "/dashboard/admin/metrics"
+                ? "bg-red-500/15 text-red-300"
+                : "text-muted-foreground hover:bg-glass-hover hover:text-foreground"
+            )}
+          >
+            <Shield className="h-5 w-5 shrink-0" />
+            {showLabels && <span>Admin Metrics</span>}
+          </Link>
+        )}
+
         {bottomItems.map((item) => {
           const isActive = pathname === item.href;
           return (
