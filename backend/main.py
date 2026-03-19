@@ -184,6 +184,29 @@ def _run_agent_with_resilience(
     raise RuntimeError(f"{agent_name} failed after retries")
 
 
+def _histogram_quantile_upper_bound_seconds(buckets: dict[float, float], quantile: float) -> float | None:
+    """Return approximate quantile upper bound based on cumulative histogram buckets."""
+    if not buckets:
+        return None
+
+    finite_keys = [k for k in buckets.keys() if k != float("inf")]
+    if not finite_keys:
+        return None
+
+    total = buckets.get(float("inf"), 0.0)
+    if total <= 0:
+        total = max((buckets[k] for k in finite_keys), default=0.0)
+    if total <= 0:
+        return None
+
+    threshold = total * quantile
+    for le in sorted(finite_keys):
+        if buckets.get(le, 0.0) >= threshold:
+            return le
+
+    return max(finite_keys)
+
+
 @app.middleware("http")
 async def request_observability_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
@@ -247,6 +270,7 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
             http_requests[key] += int(sample.value)
 
     http_duration_acc = defaultdict(lambda: {"sum": 0.0, "count": 0.0})
+    http_duration_buckets = defaultdict(dict)
     for metric in HTTP_REQUEST_DURATION_SECONDS.collect():
         for sample in metric.samples:
             if sample.name.endswith("_sum"):
@@ -255,6 +279,13 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
             elif sample.name.endswith("_count"):
                 key = (sample.labels.get("method"), sample.labels.get("path"))
                 http_duration_acc[key]["count"] += float(sample.value)
+            elif sample.name.endswith("_bucket"):
+                key = (sample.labels.get("method"), sample.labels.get("path"))
+                le_label = sample.labels.get("le")
+                if le_label is None:
+                    continue
+                le = float("inf") if le_label == "+Inf" else float(le_label)
+                http_duration_buckets[key][le] = float(sample.value)
 
     agent_calls = defaultdict(int)
     for metric in AGENT_CALLS_TOTAL.collect():
@@ -265,6 +296,7 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
             agent_calls[key] += int(sample.value)
 
     agent_duration_acc = defaultdict(lambda: {"sum": 0.0, "count": 0.0})
+    agent_duration_buckets = defaultdict(dict)
     for metric in AGENT_CALL_DURATION_SECONDS.collect():
         for sample in metric.samples:
             if sample.name.endswith("_sum"):
@@ -273,6 +305,13 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
             elif sample.name.endswith("_count"):
                 key = sample.labels.get("agent")
                 agent_duration_acc[key]["count"] += float(sample.value)
+            elif sample.name.endswith("_bucket"):
+                key = sample.labels.get("agent")
+                le_label = sample.labels.get("le")
+                if key is None or le_label is None:
+                    continue
+                le = float("inf") if le_label == "+Inf" else float(le_label)
+                agent_duration_buckets[key][le] = float(sample.value)
 
     top_http_paths = sorted(http_requests.items(), key=lambda x: x[1], reverse=True)[:20]
 
@@ -299,6 +338,25 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
             for (method, path), vals in http_duration_acc.items()
             if vals["count"] > 0
         ],
+        "http_duration_ms_percentiles": [
+            {
+                "method": method,
+                "path": path,
+                "p95_ms": (
+                    round(p95_seconds * 1000, 2)
+                    if (p95_seconds := _histogram_quantile_upper_bound_seconds(http_duration_buckets[(method, path)], 0.95)) is not None
+                    else None
+                ),
+                "p99_ms": (
+                    round(p99_seconds * 1000, 2)
+                    if (p99_seconds := _histogram_quantile_upper_bound_seconds(http_duration_buckets[(method, path)], 0.99)) is not None
+                    else None
+                ),
+                "count": int(http_duration_acc[(method, path)]["count"]),
+            }
+            for (method, path), vals in http_duration_acc.items()
+            if vals["count"] > 0
+        ],
         "agent_calls_total": [
             {
                 "agent": agent,
@@ -312,6 +370,24 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
                 "agent": agent,
                 "avg_ms": round((vals["sum"] / vals["count"]) * 1000, 2),
                 "count": int(vals["count"]),
+            }
+            for agent, vals in agent_duration_acc.items()
+            if vals["count"] > 0
+        ],
+        "agent_duration_ms_percentiles": [
+            {
+                "agent": agent,
+                "p95_ms": (
+                    round(p95_seconds * 1000, 2)
+                    if (p95_seconds := _histogram_quantile_upper_bound_seconds(agent_duration_buckets[agent], 0.95)) is not None
+                    else None
+                ),
+                "p99_ms": (
+                    round(p99_seconds * 1000, 2)
+                    if (p99_seconds := _histogram_quantile_upper_bound_seconds(agent_duration_buckets[agent], 0.99)) is not None
+                    else None
+                ),
+                "count": int(agent_duration_acc[agent]["count"]),
             }
             for agent, vals in agent_duration_acc.items()
             if vals["count"] > 0

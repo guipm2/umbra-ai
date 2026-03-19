@@ -12,3 +12,5 @@ def test_admin_metrics_allows_super_admin(client, admin_auth_headers):
     assert "uptime_seconds" in payload
     assert "http_requests_total" in payload
     assert "agent_calls_total" in payload
+    assert "http_duration_ms_percentiles" in payload
+    assert "agent_duration_ms_percentiles" in payload
