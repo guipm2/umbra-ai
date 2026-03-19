@@ -9,13 +9,30 @@ import { Loader2, Zap, LayoutTemplate, Copy, Image as ImageIcon, ChevronRight } 
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 
+type CampaignOption = {
+    id: string;
+    name: string;
+};
+
+type FullCampaign = {
+    products: { name: string } | null;
+    audiences: { name: string } | null;
+};
+
+type GeneratedStaticAd = {
+    headline?: string;
+    body?: string;
+    cta?: string;
+    image_suggestion?: string;
+};
+
 function StaticAdGeneratorContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
     const preSelectedCampaignId = searchParams.get("campaignId");
 
     // Unified Hook used for Campaign Selector
-    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery({
+    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery<CampaignOption[]>({
         key: 'aura_campaigns', // Shared key! It will pick up cache from CampaignsPage if visited
         fetcher: async () => {
             const { data, error } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
@@ -30,7 +47,7 @@ function StaticAdGeneratorContent() {
     const [selectedCampaign, setSelectedCampaign] = useState(preSelectedCampaignId || "");
     const [offer, setOffer] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedAd, setGeneratedAd] = useState<any>(null);
+    const [generatedAd, setGeneratedAd] = useState<GeneratedStaticAd | null>(null);
 
     // Update selected campaign if URL param changes
     useEffect(() => {
@@ -48,9 +65,12 @@ function StaticAdGeneratorContent() {
                 .from('campaigns')
                 .select('*, products(name), audiences(name)')
                 .eq('id', selectedCampaign)
-                .single();
+                .single<FullCampaign>();
 
             if (!fullCampaign) throw new Error("Detalhes da campanha não encontrados");
+            if (!fullCampaign.products?.name || !fullCampaign.audiences?.name) {
+                throw new Error("Dados de produto ou audiência incompletos");
+            }
 
             const response = await apiFetch("/api/static-ad", {
                 method: 'POST',
@@ -63,7 +83,7 @@ function StaticAdGeneratorContent() {
 
             if (!response.ok) throw new Error("Erro na geração da IA");
 
-            const data = await response.json();
+            const data = (await response.json()) as GeneratedStaticAd;
             setGeneratedAd(data);
 
         } catch (error) {
@@ -121,7 +141,7 @@ function StaticAdGeneratorContent() {
                             <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
                         ) : (
                             <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                {campaigns.map(camp => (
+                                {campaigns.map((camp) => (
                                     <div
                                         key={camp.id}
                                         onClick={() => setSelectedCampaign(camp.id)}

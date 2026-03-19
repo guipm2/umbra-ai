@@ -22,7 +22,7 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true, m
     const { user, loading: authLoading } = useAuth();
     const [data, setDataState] = useState<T>(initialData as T);
     const [loading, setLoading] = useState(enabled);
-    const [error, setError] = useState<any>(null);
+    const [error, setError] = useState<Error | null>(null);
     const [isRefetching, setIsRefetching] = useState(false);
 
     // Stable user id to avoid re-running effect on object reference changes
@@ -79,9 +79,10 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true, m
             setData(result);
             safeSetItem(key, result);
             setError(null);
-        } catch (err: any) {
-            if (signal?.aborted || err?.message === "Aborted") return;
-            console.error(`[useCachedQuery] Error fetching "${key}":`, err);
+        } catch (err: unknown) {
+            const normalizedError = err instanceof Error ? err : new Error("Unknown query error");
+            if (signal?.aborted || normalizedError.message === "Aborted") return;
+            console.error(`[useCachedQuery] Error fetching "${key}":`, normalizedError);
 
             // Automatic retry: one attempt after a short delay
             if (retryRef.current < 1) {
@@ -98,7 +99,7 @@ export function useCachedQuery<T>({ key, fetcher, initialData, enabled = true, m
             if (hasRealData.current) {
                 console.warn(`[useCachedQuery] Background refresh failed for "${key}", keeping stale data.`);
             } else {
-                setError(err);
+                setError(normalizedError);
             }
         } finally {
             if (!signal?.aborted) {

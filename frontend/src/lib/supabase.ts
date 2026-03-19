@@ -20,7 +20,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * This simple per-tab lock avoids cross-tab contention while still
  * serialising auth operations within the same tab.
  */
-const locks: Record<string, Promise<any>> = {}
+const locks: Record<string, Promise<unknown>> = {}
 
 async function inMemoryLock<R>(
     name: string,
