@@ -10,13 +10,30 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 
+type CampaignOption = {
+    id: string;
+    name: string;
+};
+
+type FullCampaign = {
+    products: { name: string } | null;
+    audiences: { name: string } | null;
+};
+
+type GeneratedEmail = {
+    subject_line?: string;
+    preheader?: string;
+    body_content?: string;
+    cta_button?: string;
+};
+
 function EmailGeneratorContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
     const preSelectedCampaignId = searchParams.get("campaignId");
 
     // Centralized cached query for campaigns
-    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery<any[]>({
+    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery<CampaignOption[]>({
         key: 'aura_campaigns_active',
         fetcher: async () => {
             const { data } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
@@ -30,7 +47,7 @@ function EmailGeneratorContent() {
     const [selectedCampaign, setSelectedCampaign] = useState(preSelectedCampaignId || "");
     const [objective, setObjective] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedEmail, setGeneratedEmail] = useState<any>(null);
+    const [generatedEmail, setGeneratedEmail] = useState<GeneratedEmail | null>(null);
 
     // Update selected campaign if URL param changes
     useEffect(() => {
@@ -48,9 +65,12 @@ function EmailGeneratorContent() {
                 .from('campaigns')
                 .select('*, products(name), audiences(name)')
                 .eq('id', selectedCampaign)
-                .single();
+                .single<FullCampaign>();
 
             if (!fullCampaign) throw new Error("Detalhes da campanha não encontrados");
+            if (!fullCampaign.products?.name || !fullCampaign.audiences?.name) {
+                throw new Error("Dados de produto ou audiência incompletos");
+            }
 
             const response = await apiFetch("/api/email", {
                 method: 'POST',
@@ -63,7 +83,7 @@ function EmailGeneratorContent() {
 
             if (!response.ok) throw new Error("Erro na geração da IA");
 
-            const data = await response.json();
+            const data = (await response.json()) as GeneratedEmail;
             setGeneratedEmail(data);
 
         } catch (error) {
@@ -121,7 +141,7 @@ function EmailGeneratorContent() {
                             <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
                         ) : (
                             <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                {campaigns.map(camp => (
+                                {campaigns.map((camp) => (
                                     <div
                                         key={camp.id}
                                         onClick={() => setSelectedCampaign(camp.id)}

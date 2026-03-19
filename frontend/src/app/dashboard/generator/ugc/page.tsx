@@ -9,6 +9,28 @@ import { Loader2, Smartphone, Video, Sparkles, ChevronRight, Copy, Check, PlayCi
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 
+type CampaignOption = {
+    id: string;
+    name: string;
+};
+
+type FullCampaign = {
+    products: { name: string } | null;
+    audiences: { name: string } | null;
+    experts: { name: string } | null;
+};
+
+type Scene = {
+    visual: string;
+    audio: string;
+};
+
+type GeneratedScript = {
+    title?: string;
+    hook?: string;
+    scenes: Scene[];
+};
+
 // Video Styles Mock
 const VIDEO_STYLES = [
     { id: 'review', icon: Sparkles, title: "Review Sincero", description: "Avaliação direta do produto mostrando pros e contras.", color: "text-blue-400", bg: "bg-blue-400/10" },
@@ -23,7 +45,7 @@ function UGCGeneratorContent() {
     const preSelectedCampaignId = searchParams.get("campaignId");
 
     // Centralized cached query for campaigns
-    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery<any[]>({
+    const { data: campaigns = [], loading: loadingCampaigns } = useCachedQuery<CampaignOption[]>({
         key: 'aura_campaigns_active',
         fetcher: async () => {
             const { data } = await supabase.from('campaigns').select('id, name').eq('status', 'active');
@@ -37,7 +59,7 @@ function UGCGeneratorContent() {
     const [selectedCampaign, setSelectedCampaign] = useState(preSelectedCampaignId || "");
     const [selectedStyle, setSelectedStyle] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedScript, setGeneratedScript] = useState<any>(null);
+    const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null);
 
     // Update selected campaign if URL param changes
     useEffect(() => {
@@ -52,7 +74,7 @@ function UGCGeneratorContent() {
         setIsGenerating(true);
         try {
             // 1. Get Campaign Details
-            const campaignFn = campaigns.find(c => c.id === selectedCampaign);
+            const campaignFn = campaigns.find((c) => c.id === selectedCampaign);
             if (!campaignFn) throw new Error("Campanha não encontrada");
 
             // We need the names, not just IDs. 
@@ -62,9 +84,12 @@ function UGCGeneratorContent() {
                 .from('campaigns')
                 .select('*, products(name), audiences(name), experts(name)')
                 .eq('id', selectedCampaign)
-                .single();
+                .single<FullCampaign>();
 
             if (!fullCampaign) throw new Error("Detalhes da campanha não encontrados");
+            if (!fullCampaign.products?.name || !fullCampaign.audiences?.name || !fullCampaign.experts?.name) {
+                throw new Error("Dados da campanha incompletos");
+            }
 
             // 2. Call AI Backend
             const response = await apiFetch("/api/ugc", {
@@ -79,7 +104,7 @@ function UGCGeneratorContent() {
 
             if (!response.ok) throw new Error("Erro na geração da IA");
 
-            const data = await response.json();
+            const data = (await response.json()) as GeneratedScript;
             setGeneratedScript(data);
 
         } catch (error) {
@@ -139,7 +164,7 @@ function UGCGeneratorContent() {
                             <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
                         ) : (
                             <div className="space-y-2">
-                                {campaigns.map(camp => (
+                                {campaigns.map((camp) => (
                                     <div
                                         key={camp.id}
                                         onClick={() => setSelectedCampaign(camp.id)}
@@ -229,7 +254,7 @@ function UGCGeneratorContent() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
-                                        {generatedScript.scenes.map((scene: any, idx: number) => (
+                                        {generatedScript.scenes.map((scene: Scene, idx: number) => (
                                             <tr key={idx} className="hover:bg-white/5 transition-colors">
                                                 <td className="p-4 text-sm text-gray-300 align-top leading-relaxed border-r border-white/5">
                                                     <span className="text-xs font-mono text-gray-600 block mb-1">Cena {idx + 1}</span>

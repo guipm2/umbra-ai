@@ -8,6 +8,15 @@ import { Loader2, MessageSquare, Copy, Check, Send } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 
+type GeneratedMessageVariation = {
+    label: string;
+    text: string;
+};
+
+type GeneratedMessages = {
+    variations: GeneratedMessageVariation[];
+};
+
 function MessagesGeneratorContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
@@ -17,7 +26,7 @@ function MessagesGeneratorContent() {
     const [context, setContext] = useState("");
     const [tone, setTone] = useState("Persuassivo e direto");
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedMessages, setGeneratedMessages] = useState<any>(null);
+    const [generatedMessages, setGeneratedMessages] = useState<GeneratedMessages | null>(null);
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
     const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
 
@@ -68,7 +77,7 @@ Crie mensagens para...`; // Prompt starter
 
             if (!response.ok) throw new Error("Erro na geração da IA");
 
-            const data = await response.json();
+            const data = (await response.json()) as GeneratedMessages;
             setGeneratedMessages(data);
 
         } catch (error) {
@@ -189,7 +198,7 @@ Crie mensagens para...`; // Prompt starter
                                     {isSaving ? "Salvando..." : "Salvar Conversa"}
                                 </button>
                             </div>
-                            {generatedMessages.variations.map((variation: any, index: number) => (
+                            {generatedMessages.variations.map((variation: GeneratedMessageVariation, index: number) => (
                                 <div key={index} className="glass rounded-2xl border border-white/5 p-6 animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${index * 100}ms` }}>
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="text-xs font-bold uppercase tracking-wider text-yellow-500 bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20">
