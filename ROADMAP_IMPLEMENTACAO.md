@@ -77,8 +77,10 @@ Melhorar deteccao e diagnostico de problemas em producao.
 - Metricas e alertas acionaveis disponiveis para operacao.
 
 ### Status
-- Em andamento.
+- Concluida.
 - Passo 10.1 concluido: metricas p95/p99 adicionadas por endpoint e por agente no resumo admin.
+- Passo 10.2 concluido: alertas iniciais de erro e latencia definidos com thresholds operacionais.
+- Passo 10.3 concluido: rastreio ponta-a-ponta reforcado com request id no cliente e no painel admin.
 
 ## Fase 5 - Produto e UX (longo prazo)
 ### Meta
@@ -93,4 +95,4 @@ Aumentar valor percebido e eficiencia de uso.
 - Fluxos mais rapidos para operacao diaria.
 
 ## Proximo passo imediato
-Executar passo 10.2 da Fase 4: definir alertas iniciais de erro e latencia com thresholds operacionais.
+Iniciar Fase 5 com evolucao do painel admin para visao temporal inicial de metricas.
