@@ -76,6 +76,10 @@ Melhorar deteccao e diagnostico de problemas em producao.
 ### Criterio de aceite da fase
 - Metricas e alertas acionaveis disponiveis para operacao.
 
+### Status
+- Em andamento.
+- Passo 10.1 concluido: metricas p95/p99 adicionadas por endpoint e por agente no resumo admin.
+
 ## Fase 5 - Produto e UX (longo prazo)
 ### Meta
 Aumentar valor percebido e eficiencia de uso.
@@ -89,4 +93,4 @@ Aumentar valor percebido e eficiencia de uso.
 - Fluxos mais rapidos para operacao diaria.
 
 ## Proximo passo imediato
-Iniciar Fase 4 com expansao de metricas p95/p99 por endpoint e agente, validando e publicando em commit dedicado.
+Executar passo 10.2 da Fase 4: definir alertas iniciais de erro e latencia com thresholds operacionais.
