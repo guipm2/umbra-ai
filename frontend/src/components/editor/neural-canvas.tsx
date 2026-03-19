@@ -8,7 +8,7 @@ import {
   Hash,
   AtSign,
   Smile,
-  Image,
+  Image as ImageIcon,
   Sparkles,
   Copy,
   Check,
@@ -291,7 +291,7 @@ export function NeuralCanvas({ initialPlatform = "linkedin" }: NeuralCanvasProps
                 aria-label="Imagem"
                 className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
-                <Image className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" />
               </button>
             </div>
           </div>

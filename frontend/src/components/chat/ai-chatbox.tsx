@@ -172,9 +172,11 @@ export function AiChatbox() {
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
-              <img
+              <Image
                 src="/assets/logo-umbra.png"
                 alt="Umbra AI"
+                width={112}
+                height={28}
                 className="h-7 w-auto object-contain"
               />
             </div>

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence, animate } from "framer-motion";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 
@@ -85,9 +86,11 @@ export function Navbar() {
                 >
                     {/* Logo */}
                     <a href="#" onClick={scrollToTop} className="flex items-center gap-2 group cursor-pointer">
-                        <img
+                        <Image
                             src="/assets/logo-umbra.png"
                             alt="Umbra AI"
+                            width={128}
+                            height={32}
                             className="h-8 w-auto object-contain"
                         />
                     </a>

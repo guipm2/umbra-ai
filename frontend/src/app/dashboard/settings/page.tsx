@@ -269,6 +269,7 @@ export default function SettingsPage() {
                             <div className="flex items-center gap-6 pb-6 border-b border-white/5">
                                 <div className="h-20 w-20 rounded-full bg-gradient-to-br from-electric to-neon flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-neon/20 uppercase overflow-hidden relative group">
                                     {profile.avatar_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
                                         profile.full_name?.[0] || profile.email?.[0] || "U"

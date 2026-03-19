@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
@@ -201,16 +202,20 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-4">
         {showLabels ? (
-          <img
+          <Image
             src="/assets/logo-umbra.png"
             alt="Umbra AI"
+            width={128}
+            height={32}
             className="h-8 w-auto object-contain"
           />
         ) : (
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg overflow-hidden">
-            <img
+            <Image
               src="/assets/logo-umbra.png"
               alt="Umbra AI"
+              width={28}
+              height={28}
               className="h-7 w-7 object-contain"
             />
           </div>
@@ -389,6 +394,7 @@ export function Sidebar() {
         <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 mt-2 bg-gradient-to-r from-white/5 to-transparent border border-white/5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-electric to-neon shadow-lg shadow-neon/20 overflow-hidden">
             {profile?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={profile.avatar_url} alt="User" className="h-full w-full object-cover" />
             ) : (
               <span className="text-white text-xs font-bold">{profile?.full_name?.[0] || user?.email?.[0]?.toUpperCase() || "U"}</span>

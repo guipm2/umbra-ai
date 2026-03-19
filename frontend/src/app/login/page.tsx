@@ -5,6 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { Loader2, ArrowRight, Key, Mail } from "lucide-react";
 
 export default function LoginPage() {
@@ -98,9 +99,11 @@ export default function LoginPage() {
             >
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">
-                        <img
+                        <Image
                             src="/assets/logo-umbra.png"
                             alt="Umbra AI"
+                            width={160}
+                            height={48}
                             className="h-12 w-auto object-contain"
                         />
                     </div>
