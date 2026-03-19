@@ -9,7 +9,7 @@ Evoluir o projeto com foco em qualidade tecnica, estabilidade de release e produ
 - Cada commit deve ser enviado ao repositorio imediatamente apos validacao local.
 
 ## Linha de base atual
-- Lint frontend: 52 warnings, 0 errors.
+- Lint frontend: 0 warnings, 0 errors.
 - Typecheck frontend: passando.
 - Testes backend: passando.
 
@@ -58,6 +58,12 @@ Evitar regressao de qualidade no CI.
 - Pipeline bloqueia regressao de qualidade.
 - Regras estritas reativadas com seguranca.
 
+### Status
+- Concluida com:
+- CI exigindo lint com `--max-warnings=0`.
+- CI exigindo `npm run typecheck`.
+- Regra `@typescript-eslint/no-explicit-any` elevada para erro.
+
 ## Fase 4 - Observabilidade e confiabilidade (medio/longo prazo)
 ### Meta
 Melhorar deteccao e diagnostico de problemas em producao.
@@ -83,4 +89,4 @@ Aumentar valor percebido e eficiencia de uso.
 - Fluxos mais rapidos para operacao diaria.
 
 ## Proximo passo imediato
-Iniciar Fase 1 pelo lote de warnings de imagem (no-img-element e alt-text), validando e publicando em commit dedicado.
+Iniciar Fase 4 com expansao de metricas p95/p99 por endpoint e agente, validando e publicando em commit dedicado.
