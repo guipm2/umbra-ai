@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -21,14 +21,7 @@ function MessagesGeneratorContent() {
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
     const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
 
-    // Pre-fill context if campaignId is present
-    useEffect(() => {
-        if (campaignId && user) {
-            fetchCampaignDetails();
-        }
-    }, [campaignId, user]);
-
-    async function fetchCampaignDetails() {
+    const fetchCampaignDetails = useCallback(async () => {
         setIsLoadingCampaign(true);
         try {
             const { data: campaign } = await supabase
@@ -51,7 +44,14 @@ Crie mensagens para...`; // Prompt starter
         } finally {
             setIsLoadingCampaign(false);
         }
-    }
+    }, [campaignId]);
+
+    // Pre-fill context if campaignId is present
+    useEffect(() => {
+        if (campaignId && user) {
+            fetchCampaignDetails();
+        }
+    }, [campaignId, user, fetchCampaignDetails]);
 
     const handleGenerate = async () => {
         if (!context) return;
