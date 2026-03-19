@@ -22,25 +22,54 @@ import {
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
+type CopyType = 'ugc' | 'static' | 'email' | 'message' | 'linkedin' | 'instagram';
+type CopyFilter = 'all' | CopyType;
+
+type UGCScene = {
+    visual?: string;
+    audio?: string;
+};
+
+type MessageVariation = {
+    label?: string;
+    text?: string;
+};
+
+type CopyContent = {
+    hook?: string;
+    scenes?: UGCScene[];
+    headline?: string;
+    body?: string;
+    image_suggestion?: string;
+    subject_line?: string;
+    preheader?: string;
+    body_content?: string;
+    cta_button?: string;
+    variations?: MessageVariation[];
+    text?: string;
+};
+
+const FILTER_OPTIONS: CopyFilter[] = ['all', 'ugc', 'static', 'email', 'message', 'linkedin', 'instagram'];
+
 type GeneratedContent = {
     id: string;
-    type: 'ugc' | 'static' | 'email' | 'message' | 'linkedin' | 'instagram';
+    type: CopyType;
     title: string | null;
-    content: any;
+    content: CopyContent;
     created_at: string;
-    campaigns?: { name: string };
+    campaigns?: { name: string } | null;
 };
 
 export default function MyCopiesPage() {
     const { user, loading: authLoading } = useAuth();
     // State for UI (View, Filter, Search, Modal)
     const [view, setView] = useState<'grid' | 'list'>('grid');
-    const [filter, setFilter] = useState<'all' | 'ugc' | 'static' | 'email' | 'message' | 'linkedin' | 'instagram'>('all');
+    const [filter, setFilter] = useState<CopyFilter>('all');
     const [search, setSearch] = useState("");
     const [selectedCopy, setSelectedCopy] = useState<GeneratedContent | null>(null);
 
     // Unified Hook with Dynamic Key based on Filter
-    const { data: copies = [], loading, refresh } = useCachedQuery({
+    const { data: copies = [], loading, refresh } = useCachedQuery<GeneratedContent[]>({
         key: filter === 'all' ? 'aura_my_copies' : `aura_my_copies_${filter}`,
         fetcher: async () => {
             let query = supabase
@@ -148,7 +177,7 @@ export default function MyCopiesPage() {
                         <p className="text-white text-lg">&quot;{copy.content.hook}&quot;</p>
                     </div>
                     <div className="space-y-2">
-                        {(copy.content.scenes || []).map((scene: any, i: number) => (
+                        {(copy.content.scenes || []).map((scene: UGCScene, i: number) => (
                             <div key={i} className="grid grid-cols-2 gap-4 p-3 bg-black/20 rounded border border-white/5">
                                 <div>
                                     <span className="text-[10px] text-gray-500 uppercase">Visual</span>
@@ -205,7 +234,7 @@ export default function MyCopiesPage() {
         if (copy.type === 'message') {
             return (
                 <div className="grid gap-4">
-                    {(copy.content.variations || []).map((v: any, i: number) => (
+                    {(copy.content.variations || []).map((v: MessageVariation, i: number) => (
                         <div key={i} className="bg-white/5 p-4 rounded-lg border border-white/10">
                             <span className="text-xs font-bold text-yellow-500 uppercase mb-2 block">{v.label}</span>
                             <p className="text-white whitespace-pre-wrap">{v.text}</p>
@@ -218,7 +247,7 @@ export default function MyCopiesPage() {
             return (
                 <div className="bg-white/5 p-6 rounded-lg border border-white/10 prose prose-invert max-w-none text-gray-300">
                     <ReactMarkdown>
-                        {copy.content.text}
+                        {copy.content.text || ""}
                     </ReactMarkdown>
                 </div>
             );
@@ -233,13 +262,13 @@ export default function MyCopiesPage() {
         switch (copy.type) {
             case 'ugc':
                 return `HOOK: ${copy.content.hook}\n\n` +
-                    (copy.content.scenes || []).map((s: any, i: number) => `CENA ${i + 1}\nVisual: ${s.visual}\nAudio: ${s.audio}`).join('\n\n');
+                    (copy.content.scenes || []).map((s: UGCScene, i: number) => `CENA ${i + 1}\nVisual: ${s.visual}\nAudio: ${s.audio}`).join('\n\n');
             case 'static':
                 return `HEADLINE: ${copy.content.headline}\n\nCORPO:\n${copy.content.body}\n\nVISUAL: ${copy.content.image_suggestion}`;
             case 'email':
                 return `ASSUNTO: ${copy.content.subject_line}\nPREHEADER: ${copy.content.preheader}\n\nCORPO:\n${copy.content.body_content}\n\nCTA: ${copy.content.cta_button}`;
             case 'message':
-                return (copy.content.variations || []).map((v: any) => `[${v.label}]\n${v.text}`).join('\n\n-------------------\n\n');
+                return (copy.content.variations || []).map((v: MessageVariation) => `[${v.label}]\n${v.text}`).join('\n\n-------------------\n\n');
             case 'linkedin':
             case 'instagram':
                 return copy.content.text || "";
@@ -289,10 +318,10 @@ export default function MyCopiesPage() {
                     />
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 custom-scrollbar">
-                    {['all', 'ugc', 'static', 'email', 'message', 'linkedin', 'instagram'].map((t) => (
+                    {FILTER_OPTIONS.map((t) => (
                         <button
                             key={t}
-                            onClick={() => setFilter(t as any)}
+                            onClick={() => setFilter(t)}
                             className={`px-4 py-2 rounded-lg text-xs font-medium border transition-all whitespace-nowrap ${filter === t
                                 ? 'bg-white/10 border-white/20 text-white'
                                 : 'bg-transparent border-transparent text-gray-500 hover:text-white hover:bg-white/5'

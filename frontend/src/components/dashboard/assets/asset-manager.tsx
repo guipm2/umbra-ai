@@ -14,19 +14,25 @@ interface AssetField {
     placeholder?: string;
 }
 
+type AssetRecord = {
+    id: string;
+    name?: string;
+    [key: string]: string | number | string[] | null | undefined;
+};
+
 interface AssetManagerProps {
     title: string;
     description: string;
     tableName: "products" | "audiences" | "experts";
     icon: React.ComponentType<{ className?: string }>;
     fields: AssetField[];
-    renderCard: (item: Record<string, any>) => React.ReactNode;
+    renderCard: (item: AssetRecord) => React.ReactNode;
 }
 
 export function AssetManager({ title, description, tableName, icon: Icon, fields, renderCard }: AssetManagerProps) {
     const { user } = useAuth();
     // Unified Hook
-    const { data: items = [], loading, error, refresh } = useCachedQuery({
+    const { data: items = [], loading, error, refresh } = useCachedQuery<AssetRecord[]>({
         key: `aura_assets_${tableName}`,
         fetcher: async () => {
             const { data, error } = await supabase
@@ -46,10 +52,10 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
 
     const [searchTerm, setSearchTerm] = useState("");
     const [isCreating, setIsCreating] = useState(false);
-    const [editingItem, setEditingItem] = useState<Record<string, any> | null>(null);
+    const [editingItem, setEditingItem] = useState<AssetRecord | null>(null);
 
     // Form State
-    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [formData, setFormData] = useState<Record<string, string | number | string[] | null | undefined>>({});
     const [saving, setSaving] = useState(false);
 
     // useEffect for loading is handled by the hook
@@ -61,8 +67,9 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
             // Handle Tags Transform (String -> Array)
             const processedData = { ...formData };
             fields.forEach(field => {
-                if (field.type === 'tags' && typeof processedData[field.name] === 'string') {
-                    processedData[field.name] = processedData[field.name].split(',').map((t: string) => t.trim()).filter((t: string) => t);
+                const fieldValue = processedData[field.name];
+                if (field.type === 'tags' && typeof fieldValue === 'string') {
+                    processedData[field.name] = fieldValue.split(',').map((t: string) => t.trim()).filter((t: string) => t);
                 }
             });
 
@@ -112,7 +119,7 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
         }
     }
 
-    const openEditor = (item?: Record<string, any>) => {
+    const openEditor = (item?: AssetRecord) => {
         if (item) {
             setEditingItem(item);
             setFormData(item);
@@ -152,7 +159,10 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
                                     <textarea
                                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neon/50 min-h-[120px]"
                                         placeholder={field.placeholder}
-                                        value={formData[field.name] || ""}
+                                        value={(() => {
+                                            const value = formData[field.name];
+                                            return typeof value === 'number' ? value : String(value ?? "");
+                                        })()}
                                         onChange={e => setFormData({ ...formData, [field.name]: e.target.value })}
                                     />
                                 ) : (
@@ -160,7 +170,10 @@ export function AssetManager({ title, description, tableName, icon: Icon, fields
                                         type={field.type === 'tags' ? 'text' : field.type}
                                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neon/50"
                                         placeholder={field.placeholder}
-                                        value={formData[field.name] || ""}
+                                        value={(() => {
+                                            const value = formData[field.name];
+                                            return typeof value === 'number' ? value : String(value ?? "");
+                                        })()}
                                         onChange={e => setFormData({ ...formData, [field.name]: e.target.value })}
                                     />
                                 )}
