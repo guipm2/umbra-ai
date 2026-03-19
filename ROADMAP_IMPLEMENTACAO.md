@@ -94,5 +94,11 @@ Aumentar valor percebido e eficiencia de uso.
 ### Criterio de aceite da fase
 - Fluxos mais rapidos para operacao diaria.
 
+### Status
+- Em andamento com entregas iniciais:
+- Passo 11.1: painel admin com visao temporal recente de metricas.
+- Passo 11.2: biblioteca de copys com acoes rapidas na listagem.
+- Passo 11.3: Brain com remocao de arquivos na gestao local.
+
 ## Proximo passo imediato
-Iniciar Fase 5 com evolucao do painel admin para visao temporal inicial de metricas.
+Consolidar fase 5 com refinamentos de UX e, em seguida, preparar checklist de fechamento de ciclo.
