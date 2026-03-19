@@ -16,6 +16,7 @@ import {
     ArrowRight,
     Trash2,
     Copy,
+    Clipboard,
     Layers,
     FileText
 } from "lucide-react";
@@ -353,8 +354,43 @@ export default function MyCopiesPage() {
                             <div
                                 key={copy.id}
                                 onClick={() => setSelectedCopy(copy)}
-                                className={`group cursor-pointer rounded-xl border border-white/5 bg-black/20 hover:bg-white/5 hover:border-neon/20 transition-all overflow-hidden flex flex-col ${view === 'list' ? 'flex-row items-center gap-6 p-4' : 'p-6'}`}
+                                className={`group cursor-pointer rounded-xl border border-white/5 bg-black/20 hover:bg-white/5 hover:border-neon/20 transition-all overflow-hidden flex flex-col relative ${view === 'list' ? 'flex-row items-center gap-6 p-4' : 'p-6'}`}
                             >
+                                <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 border border-white/10 rounded-lg p-1 z-10">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigator.clipboard.writeText(getCopyText(copy));
+                                            toast.success("Texto copiado!");
+                                        }}
+                                        className="p-1.5 rounded text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Copiar texto"
+                                    >
+                                        <Clipboard className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigator.clipboard.writeText(JSON.stringify(copy.content, null, 2));
+                                            toast.success("JSON copiado!");
+                                        }}
+                                        className="p-1.5 rounded text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Copiar JSON"
+                                    >
+                                        <Copy className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            await handleDelete(copy.id);
+                                        }}
+                                        className="p-1.5 rounded text-red-300 hover:text-red-200 hover:bg-red-500/20 transition-colors"
+                                        title="Deletar"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+
                                 <div className="flex items-start justify-between mb-4">
                                     <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider ${getTypeColor(copy.type)}`}>
                                         {getTypeIcon(copy.type)}
