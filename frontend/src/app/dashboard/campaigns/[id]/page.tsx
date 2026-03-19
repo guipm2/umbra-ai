@@ -20,12 +20,39 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+type CampaignDetails = {
+    id: string;
+    name: string;
+    objective: string;
+    created_at: string;
+    products?: {
+        name?: string;
+        description?: string;
+    } | null;
+    audiences?: {
+        name?: string;
+        pain_points?: string;
+    } | null;
+    experts?: {
+        name?: string;
+        role?: string;
+    } | null;
+};
+
+type GeneratedContentItem = {
+    id: string;
+    type?: string;
+    title?: string;
+    created_at: string;
+    content: unknown;
+};
+
 export default function CampaignDetailsPage() {
     const { id } = useParams();
     const { user } = useAuth();
     
     // 1. Fetch Campaign Details
-    const { data: campaign, loading: campaignLoading } = useCachedQuery<any>({
+    const { data: campaign, loading: campaignLoading } = useCachedQuery<CampaignDetails | null>({
         key: `aura_campaign_${id}`,
         fetcher: async () => {
             const { data, error } = await supabase
@@ -40,7 +67,7 @@ export default function CampaignDetailsPage() {
     });
 
     // 2. Fetch Associated Content
-    const { data: contents = [] } = useCachedQuery<any[]>({
+    const { data: contents = [] } = useCachedQuery<GeneratedContentItem[]>({
         key: `aura_campaign_content_${id}`,
         fetcher: async () => {
             const { data, error } = await supabase
@@ -218,7 +245,7 @@ export default function CampaignDetailsPage() {
                                 <p className="text-xs text-gray-500 line-clamp-2">
                                      {typeof content.content === 'object' 
                                         ? JSON.stringify(content.content).substring(0, 100) 
-                                        : content.content}
+                                    : String(content.content ?? "")}
                                 </p>
                              </div>
                         ))}

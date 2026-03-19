@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Stepper } from "@/components/ui/stepper";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +10,32 @@ import { useCachedQuery } from "@/hooks/use-cached-query";
 import { safeRemoveItem } from "@/lib/storage";
 import { Loader2, ChevronRight, ChevronLeft, Package, Users, UserCheck, Target } from "lucide-react";
 import { toast } from "sonner";
+
+type Product = {
+    id: string;
+    name: string;
+    offer_description?: string | null;
+};
+
+type Audience = {
+    id: string;
+    name: string;
+    description?: string | null;
+};
+
+type Expert = {
+    id: string;
+    name: string;
+    archetype?: string | null;
+};
+
+type SelectableItem = {
+    id: string;
+    name: string;
+    offer_description?: string | null;
+    description?: string | null;
+    archetype?: string | null;
+};
 
 const STEPS = [
     { id: 1, title: "Produto" },
@@ -24,7 +51,7 @@ export default function NewCampaignPage() {
     const [loading, setLoading] = useState(false);
 
     // Centralized cached queries for assets
-    const { data: products = [] } = useCachedQuery<any[]>({
+    const { data: products = [] } = useCachedQuery<Product[]>({
         key: 'aura_assets_products',
         fetcher: async () => {
             const { data } = await supabase.from('products').select('*');
@@ -34,7 +61,7 @@ export default function NewCampaignPage() {
         enabled: !!user,
     });
 
-    const { data: audiences = [] } = useCachedQuery<any[]>({
+    const { data: audiences = [] } = useCachedQuery<Audience[]>({
         key: 'aura_assets_audiences',
         fetcher: async () => {
             const { data } = await supabase.from('audiences').select('*');
@@ -44,7 +71,7 @@ export default function NewCampaignPage() {
         enabled: !!user,
     });
 
-    const { data: experts = [] } = useCachedQuery<any[]>({
+    const { data: experts = [] } = useCachedQuery<Expert[]>({
         key: 'aura_assets_experts',
         fetcher: async () => {
             const { data } = await supabase.from('experts').select('*');
@@ -100,9 +127,9 @@ export default function NewCampaignPage() {
         }
     };
 
-    const renderSelectionGrid = (items: any[], selectedId: string, onSelect: (id: string) => void, icon: any) => (
+    const renderSelectionGrid = (items: SelectableItem[], selectedId: string, onSelect: (id: string) => void, icon: ReactNode) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
-            {items.map(item => (
+            {items.map((item) => (
                 <div
                     key={item.id}
                     onClick={() => onSelect(item.id)}

@@ -9,6 +9,12 @@ import { safeSetItem } from "@/lib/storage";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 
+type BrainFile = {
+    name: string;
+    size: string;
+    type: string;
+};
+
 export default function BrainPage() {
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,7 +33,7 @@ export default function BrainPage() {
     });
 
     // Unified Hook for Files
-    const { data: files = [], setData: setFiles } = useCachedQuery<any[]>({
+    const { data: files = [], setData: setFiles } = useCachedQuery<BrainFile[]>({
         key: 'aura_brain_files',
         fetcher: async () => {
             // Simulate Fetch (Placeholder for Phase 2 Integration)
@@ -86,9 +92,10 @@ export default function BrainPage() {
 
             toast.success(`Arquivo processado com sucesso: ${result.message}`);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            toast.error(`Erro ao enviar arquivo: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+            toast.error(`Erro ao enviar arquivo: ${errorMessage}`);
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
