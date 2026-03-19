@@ -60,6 +60,13 @@ export default function BrainPage() {
         toast.success("Voz salva!");
     };
 
+    const handleRemoveFile = (fileName: string) => {
+        const nextFiles = files.filter((file) => file.name !== fileName);
+        setFiles(nextFiles);
+        safeSetItem('aura_brain_files', nextFiles);
+        toast.success("Arquivo removido da lista local.");
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -189,7 +196,10 @@ export default function BrainPage() {
                                             <p className="text-[10px] text-gray-500 uppercase">{file.type} • {file.size}</p>
                                         </div>
                                     </div>
-                                    <button className="p-2 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                                    <button
+                                        onClick={() => handleRemoveFile(file.name)}
+                                        className="p-2 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                    >
                                         <Trash2 className="h-4 w-4" />
                                     </button>
                                 </div>
