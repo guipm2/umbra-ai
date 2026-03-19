@@ -62,6 +62,14 @@ interface AdminMetricsSummary {
   alerts: AdminAlert[];
 }
 
+interface MetricsSnapshot {
+  timestamp: string;
+  totalHttpCalls: number;
+  totalAgentCalls: number;
+  totalAgentErrors: number;
+  totalAlerts: number;
+}
+
 function formatUptime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -75,6 +83,7 @@ export default function AdminMetricsPage() {
   const [data, setData] = useState<AdminMetricsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [snapshots, setSnapshots] = useState<MetricsSnapshot[]>([]);
 
   const refreshMetrics = async () => {
     setRefreshing(true);
@@ -134,6 +143,22 @@ export default function AdminMetricsPage() {
 
     return { totalHttpCalls, totalAgentCalls, totalAgentErrors, totalAlerts, criticalAlerts };
   }, [data]);
+
+  useEffect(() => {
+    if (!data) return;
+    const snapshot: MetricsSnapshot = {
+      timestamp: new Date().toISOString(),
+      totalHttpCalls: totals.totalHttpCalls,
+      totalAgentCalls: totals.totalAgentCalls,
+      totalAgentErrors: totals.totalAgentErrors,
+      totalAlerts: totals.totalAlerts,
+    };
+
+    setSnapshots((prev) => {
+      const next = [...prev, snapshot].slice(-12);
+      return next;
+    });
+  }, [data, totals.totalAgentCalls, totals.totalAgentErrors, totals.totalAlerts, totals.totalHttpCalls]);
 
   if (loading || !isSuperAdmin) {
     return (
@@ -211,6 +236,38 @@ export default function AdminMetricsPage() {
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          <div className="glass rounded-xl border border-white/10 overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/10 text-sm text-white font-semibold">Visão Temporal Recente</div>
+            <div className="max-h-[260px] overflow-auto">
+              {snapshots.length < 2 ? (
+                <div className="px-4 py-5 text-sm text-gray-400">Coletando amostras para tendência...</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-gray-400 uppercase bg-white/5">
+                    <tr>
+                      <th className="text-left px-4 py-2">Hora</th>
+                      <th className="text-right px-4 py-2">HTTP</th>
+                      <th className="text-right px-4 py-2">Agents</th>
+                      <th className="text-right px-4 py-2">Erros</th>
+                      <th className="text-right px-4 py-2">Alertas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...snapshots].reverse().map((snapshot, idx) => (
+                      <tr key={`${snapshot.timestamp}-${idx}`} className="border-t border-white/5">
+                        <td className="px-4 py-2 text-gray-300">{new Date(snapshot.timestamp).toLocaleTimeString("pt-BR")}</td>
+                        <td className="px-4 py-2 text-right text-white">{snapshot.totalHttpCalls}</td>
+                        <td className="px-4 py-2 text-right text-white">{snapshot.totalAgentCalls}</td>
+                        <td className="px-4 py-2 text-right text-red-300">{snapshot.totalAgentErrors}</td>
+                        <td className="px-4 py-2 text-right text-yellow-300">{snapshot.totalAlerts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
