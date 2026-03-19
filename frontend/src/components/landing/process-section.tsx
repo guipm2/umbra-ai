@@ -74,7 +74,7 @@ export function ProcessSection() {
                         </h2>
 
                         <p className="text-lg text-gray-400 leading-relaxed mb-8">
-                            Através de um "Deep Scan" no seu perfil, nossa IA mapeia seu vocabulário, tom de voz e pilares de conteúdo.
+                            Através de um &quot;Deep Scan&quot; no seu perfil, nossa IA mapeia seu vocabulário, tom de voz e pilares de conteúdo.
                             O resultado? Uma presença digital que soa <strong className="text-white">100% como você</strong>,
                             mas com a eficiência da automação.
                         </p>

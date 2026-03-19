@@ -145,7 +145,7 @@ export default function MyCopiesPage() {
                 <div className="space-y-4">
                     <div className="p-4 bg-white/5 rounded-lg border border-white/10">
                         <h4 className="text-sm font-bold text-gray-400 uppercase mb-2">Hook</h4>
-                        <p className="text-white text-lg">"{copy.content.hook}"</p>
+                        <p className="text-white text-lg">&quot;{copy.content.hook}&quot;</p>
                     </div>
                     <div className="space-y-2">
                         {(copy.content.scenes || []).map((scene: any, i: number) => (
@@ -156,7 +156,7 @@ export default function MyCopiesPage() {
                                 </div>
                                 <div className="border-l border-white/5 pl-4">
                                     <span className="text-[10px] text-gray-500 uppercase">Áudio</span>
-                                    <p className="text-sm text-white font-medium">"{scene.audio}"</p>
+                                    <p className="text-sm text-white font-medium">&quot;{scene.audio}&quot;</p>
                                 </div>
                             </div>
                         ))}

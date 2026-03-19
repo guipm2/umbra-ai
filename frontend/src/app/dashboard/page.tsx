@@ -101,7 +101,7 @@ export default function DashboardPage() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-neon/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <h3 className="relative text-sm font-semibold text-white mb-3">Dica do Dia</h3>
             <p className="relative text-sm text-gray-400 leading-relaxed mb-4">
-              Posts com perguntas no final têm <span className="text-neon font-medium">40% mais engajamento</span>. Tente terminar seu próximo post com "E você, concorda?"
+              Posts com perguntas no final têm <span className="text-neon font-medium">40% mais engajamento</span>. Tente terminar seu próximo post com &quot;E você, concorda?&quot;
             </p>
             <button className="relative w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs font-medium text-white transition-all">
               Aplicar no próximo post

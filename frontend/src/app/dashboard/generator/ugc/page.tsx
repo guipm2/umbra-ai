@@ -212,7 +212,7 @@ function UGCGeneratorContent() {
                                     <h2 className="text-xl font-bold text-white mb-1">{generatedScript.title}</h2>
                                     <div className="flex items-center gap-2 text-sm text-gray-400">
                                         <span className="bg-neon/20 text-neon px-2 py-0.5 rounded text-xs font-mono">HOOK</span>
-                                        "{generatedScript.hook}"
+                                        &quot;{generatedScript.hook}&quot;
                                     </div>
                                 </div>
                                 <button className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
@@ -236,7 +236,7 @@ function UGCGeneratorContent() {
                                                     {scene.visual}
                                                 </td>
                                                 <td className="p-4 text-sm text-white font-medium align-top leading-relaxed text-shadow">
-                                                    "{scene.audio}"
+                                                    &quot;{scene.audio}&quot;
                                                 </td>
                                             </tr>
                                         ))}

@@ -199,7 +199,7 @@ function StaticAdGeneratorContent() {
                                     </h3>
                                     <div className="bg-black/40 rounded-xl p-6 border border-white/10 border-dashed">
                                         <p className="text-gray-300 italic leading-relaxed">
-                                            "{generatedAd.image_suggestion}"
+                                            &quot;{generatedAd.image_suggestion}&quot;
                                         </p>
                                     </div>
                                 </div>
