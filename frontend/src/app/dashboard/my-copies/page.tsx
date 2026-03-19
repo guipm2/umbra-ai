@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { supabase } from "@/lib/supabase";
@@ -8,7 +8,6 @@ import {
     LayoutGrid,
     List,
     Search,
-    Filter,
     Video,
     Image as ImageIcon,
     Mail,
@@ -17,7 +16,6 @@ import {
     ArrowRight,
     Trash2,
     Copy,
-    Check,
     Layers,
     FileText
 } from "lucide-react";

@@ -2,8 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Upload, FileText, Sparkles, BrainCircuit, Trash2, Plus, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Upload, FileText, Sparkles, BrainCircuit, Trash2, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { safeSetItem } from "@/lib/storage";
@@ -28,7 +27,7 @@ export default function BrainPage() {
     });
 
     // Unified Hook for Files
-    const { data: files = [], refresh: refreshFiles, setData: setFiles } = useCachedQuery<any[]>({
+    const { data: files = [], setData: setFiles } = useCachedQuery<any[]>({
         key: 'aura_brain_files',
         fetcher: async () => {
             // Simulate Fetch (Placeholder for Phase 2 Integration)

@@ -11,7 +11,6 @@ import {
     Users,
     UserCheck,
     Calendar,
-    Plus,
     Mail,
     MessageSquare,
     Video,
@@ -20,7 +19,6 @@ import {
     FileText
 } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 export default function CampaignDetailsPage() {
     const { id } = useParams();
@@ -42,7 +40,7 @@ export default function CampaignDetailsPage() {
     });
 
     // 2. Fetch Associated Content
-    const { data: contents = [], loading: contentLoading } = useCachedQuery<any[]>({
+    const { data: contents = [] } = useCachedQuery<any[]>({
         key: `aura_campaign_content_${id}`,
         fetcher: async () => {
             const { data, error } = await supabase
