@@ -150,6 +150,9 @@ export default function AdminMetricsPage() {
             Admin Metrics
           </h1>
           <p className="text-sm text-gray-400 mt-1">Painel restrito a usuários com super acesso.</p>
+          {data?.request_id && (
+            <p className="text-xs text-gray-500 mt-2">request_id da consulta atual: {data.request_id}</p>
+          )}
         </div>
         <button
           onClick={refreshMetrics}

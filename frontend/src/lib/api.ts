@@ -4,6 +4,14 @@
 
 import { supabase } from "./supabase";
 
+function createRequestId(): string {
+    const withCrypto = globalThis.crypto?.randomUUID;
+    if (withCrypto) {
+        return withCrypto.call(globalThis.crypto);
+    }
+    return `rid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function getApiBaseUrl(): string {
     const url = process.env.NEXT_PUBLIC_API_URL;
     if (!url) {
@@ -24,6 +32,10 @@ export async function apiFetch(
     const url = `${baseUrl}${path}`;
 
     const headers = new Headers(init?.headers);
+
+    if (!headers.has("X-Request-ID")) {
+        headers.set("X-Request-ID", createRequestId());
+    }
 
     // Attach auth token if available
     const { data: { session } } = await supabase.auth.getSession();
@@ -51,7 +63,12 @@ export async function apiJson<T = unknown>(
 
     if (!response.ok) {
         const text = await response.text().catch(() => "");
-        throw new Error(text || `API error: ${response.status}`);
+        const responseRequestId = response.headers.get("X-Request-ID");
+        const baseMessage = text || `API error: ${response.status}`;
+        const fullMessage = responseRequestId
+            ? `${baseMessage} | request_id=${responseRequestId}`
+            : baseMessage;
+        throw new Error(fullMessage);
     }
 
     return response.json() as Promise<T>;
