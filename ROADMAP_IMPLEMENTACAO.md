@@ -1,0 +1,86 @@
+# Roadmap de Implementacao - Umbra AI
+
+## Objetivo
+Evoluir o projeto com foco em qualidade tecnica, estabilidade de release e produtividade de desenvolvimento.
+
+## Regra de execucao
+- Cada melhoria vira um commit proprio.
+- Cada commit deve usar mensagem padronizada em portugues.
+- Cada commit deve ser enviado ao repositorio imediatamente apos validacao local.
+
+## Linha de base atual
+- Lint frontend: 52 warnings, 0 errors.
+- Typecheck frontend: passando.
+- Testes backend: passando.
+
+## Fase 1 - Higiene de lint (curto prazo)
+### Meta
+Reduzir warnings sem mudar comportamento de negocio.
+
+### Ordem
+1. Corrigir warnings de imagens:
+- no-img-element
+- alt-text
+
+2. Corrigir warnings de hooks:
+- exhaustive-deps restantes
+
+3. Corrigir warnings de simbolos nao utilizados:
+- imports e variaveis locais
+
+### Criterio de aceite da fase
+- Sem erros de lint.
+- Warning total significativamente menor.
+- Typecheck passando.
+
+## Fase 2 - Tipagem e contratos (medio prazo)
+### Meta
+Aumentar seguranca de refatoracao e reduzir bugs de integracao.
+
+### Ordem
+1. Reduzir uso de any remanescente no frontend.
+2. Tipar melhor respostas dos endpoints consumidos por paginas principais.
+3. Padronizar tipos compartilhados para payloads de API.
+
+### Criterio de aceite da fase
+- Warning de no-explicit-any reduzido de forma consistente.
+- Fluxos principais com tipagem mais estrita.
+
+## Fase 3 - Qualidade de pipeline (medio prazo)
+### Meta
+Evitar regressao de qualidade no CI.
+
+### Ordem
+1. Ajustar CI para falhar se warnings crescerem acima da linha de base definida.
+2. Restaurar gradualmente regras de lint mais estritas para erro.
+
+### Criterio de aceite da fase
+- Pipeline bloqueia regressao de qualidade.
+- Regras estritas reativadas com seguranca.
+
+## Fase 4 - Observabilidade e confiabilidade (medio/longo prazo)
+### Meta
+Melhorar deteccao e diagnostico de problemas em producao.
+
+### Ordem
+1. Expandir metricas com p95/p99 por endpoint e agente.
+2. Definir alertas de erro/latencia.
+3. Melhorar rastreio por request id ponta-a-ponta.
+
+### Criterio de aceite da fase
+- Metricas e alertas acionaveis disponiveis para operacao.
+
+## Fase 5 - Produto e UX (longo prazo)
+### Meta
+Aumentar valor percebido e eficiencia de uso.
+
+### Ordem
+1. Evoluir painel admin para visao temporal.
+2. Melhorar biblioteca de copys com filtros e acoes rapidas.
+3. Evoluir Brain para gestao completa de arquivos.
+
+### Criterio de aceite da fase
+- Fluxos mais rapidos para operacao diaria.
+
+## Proximo passo imediato
+Iniciar Fase 1 pelo lote de warnings de imagem (no-img-element e alt-text), validando e publicando em commit dedicado.
