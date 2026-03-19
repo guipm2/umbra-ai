@@ -79,6 +79,14 @@ MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
 AI_TIMEOUT_SECONDS = int(os.getenv("AI_TIMEOUT_SECONDS", "45"))
 AI_MAX_RETRIES = int(os.getenv("AI_MAX_RETRIES", "2"))
 AI_RETRY_BASE_DELAY_SECONDS = float(os.getenv("AI_RETRY_BASE_DELAY_SECONDS", "0.8"))
+HTTP_ERROR_RATE_WARNING = float(os.getenv("HTTP_ERROR_RATE_WARNING", "0.05"))
+HTTP_ERROR_RATE_CRITICAL = float(os.getenv("HTTP_ERROR_RATE_CRITICAL", "0.10"))
+HTTP_P95_WARNING_MS = float(os.getenv("HTTP_P95_WARNING_MS", "1200"))
+HTTP_P95_CRITICAL_MS = float(os.getenv("HTTP_P95_CRITICAL_MS", "2500"))
+AGENT_ERROR_RATE_WARNING = float(os.getenv("AGENT_ERROR_RATE_WARNING", "0.08"))
+AGENT_ERROR_RATE_CRITICAL = float(os.getenv("AGENT_ERROR_RATE_CRITICAL", "0.15"))
+AGENT_P95_WARNING_MS = float(os.getenv("AGENT_P95_WARNING_MS", "5000"))
+AGENT_P95_CRITICAL_MS = float(os.getenv("AGENT_P95_CRITICAL_MS", "9000"))
 
 # ---------------------------------------------------------------------------
 # Request models — with basic input length limits
@@ -315,6 +323,188 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
 
     top_http_paths = sorted(http_requests.items(), key=lambda x: x[1], reverse=True)[:20]
 
+    http_duration_ms_avg = [
+        {
+            "method": method,
+            "path": path,
+            "avg_ms": round((vals["sum"] / vals["count"]) * 1000, 2),
+            "count": int(vals["count"]),
+        }
+        for (method, path), vals in http_duration_acc.items()
+        if vals["count"] > 0
+    ]
+
+    http_duration_ms_percentiles = [
+        {
+            "method": method,
+            "path": path,
+            "p95_ms": (
+                round(p95_seconds * 1000, 2)
+                if (p95_seconds := _histogram_quantile_upper_bound_seconds(http_duration_buckets[(method, path)], 0.95)) is not None
+                else None
+            ),
+            "p99_ms": (
+                round(p99_seconds * 1000, 2)
+                if (p99_seconds := _histogram_quantile_upper_bound_seconds(http_duration_buckets[(method, path)], 0.99)) is not None
+                else None
+            ),
+            "count": int(http_duration_acc[(method, path)]["count"]),
+        }
+        for (method, path), vals in http_duration_acc.items()
+        if vals["count"] > 0
+    ]
+
+    agent_calls_total = [
+        {
+            "agent": agent,
+            "status": status,
+            "count": count,
+        }
+        for (agent, status), count in sorted(agent_calls.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+    agent_duration_ms_avg = [
+        {
+            "agent": agent,
+            "avg_ms": round((vals["sum"] / vals["count"]) * 1000, 2),
+            "count": int(vals["count"]),
+        }
+        for agent, vals in agent_duration_acc.items()
+        if vals["count"] > 0
+    ]
+
+    agent_duration_ms_percentiles = [
+        {
+            "agent": agent,
+            "p95_ms": (
+                round(p95_seconds * 1000, 2)
+                if (p95_seconds := _histogram_quantile_upper_bound_seconds(agent_duration_buckets[agent], 0.95)) is not None
+                else None
+            ),
+            "p99_ms": (
+                round(p99_seconds * 1000, 2)
+                if (p99_seconds := _histogram_quantile_upper_bound_seconds(agent_duration_buckets[agent], 0.99)) is not None
+                else None
+            ),
+            "count": int(agent_duration_acc[agent]["count"]),
+        }
+        for agent, vals in agent_duration_acc.items()
+        if vals["count"] > 0
+    ]
+
+    alerts = []
+
+    http_by_endpoint = defaultdict(lambda: {"total": 0, "errors": 0})
+    for (method, path, status), count in http_requests.items():
+        key = (method, path)
+        http_by_endpoint[key]["total"] += count
+        if str(status).startswith("5"):
+            http_by_endpoint[key]["errors"] += count
+
+    for (method, path), stats in http_by_endpoint.items():
+        total = stats["total"]
+        if total <= 0:
+            continue
+        error_rate = stats["errors"] / total
+        if error_rate >= HTTP_ERROR_RATE_CRITICAL:
+            severity = "critical"
+        elif error_rate >= HTTP_ERROR_RATE_WARNING:
+            severity = "warning"
+        else:
+            severity = None
+
+        if severity:
+            alerts.append(
+                {
+                    "category": "http_error_rate",
+                    "severity": severity,
+                    "target": {"method": method, "path": path},
+                    "value": round(error_rate, 4),
+                    "threshold": HTTP_ERROR_RATE_CRITICAL if severity == "critical" else HTTP_ERROR_RATE_WARNING,
+                    "message": f"Taxa de erro HTTP elevada em {method} {path}",
+                }
+            )
+
+    for item in http_duration_ms_percentiles:
+        p95 = item.get("p95_ms")
+        if p95 is None:
+            continue
+        if p95 >= HTTP_P95_CRITICAL_MS:
+            severity = "critical"
+        elif p95 >= HTTP_P95_WARNING_MS:
+            severity = "warning"
+        else:
+            severity = None
+
+        if severity:
+            alerts.append(
+                {
+                    "category": "http_latency_p95",
+                    "severity": severity,
+                    "target": {"method": item["method"], "path": item["path"]},
+                    "value": p95,
+                    "threshold": HTTP_P95_CRITICAL_MS if severity == "critical" else HTTP_P95_WARNING_MS,
+                    "message": f"Latência HTTP p95 elevada em {item['method']} {item['path']}",
+                }
+            )
+
+    agent_by_name = defaultdict(lambda: {"total": 0, "errors": 0})
+    for (agent, status), count in agent_calls.items():
+        if agent is None:
+            continue
+        agent_by_name[agent]["total"] += count
+        if status == "error":
+            agent_by_name[agent]["errors"] += count
+
+    for agent, stats in agent_by_name.items():
+        total = stats["total"]
+        if total <= 0:
+            continue
+        error_rate = stats["errors"] / total
+        if error_rate >= AGENT_ERROR_RATE_CRITICAL:
+            severity = "critical"
+        elif error_rate >= AGENT_ERROR_RATE_WARNING:
+            severity = "warning"
+        else:
+            severity = None
+
+        if severity:
+            alerts.append(
+                {
+                    "category": "agent_error_rate",
+                    "severity": severity,
+                    "target": {"agent": agent},
+                    "value": round(error_rate, 4),
+                    "threshold": AGENT_ERROR_RATE_CRITICAL if severity == "critical" else AGENT_ERROR_RATE_WARNING,
+                    "message": f"Taxa de erro elevada no agente {agent}",
+                }
+            )
+
+    for item in agent_duration_ms_percentiles:
+        p95 = item.get("p95_ms")
+        if p95 is None:
+            continue
+        if p95 >= AGENT_P95_CRITICAL_MS:
+            severity = "critical"
+        elif p95 >= AGENT_P95_WARNING_MS:
+            severity = "warning"
+        else:
+            severity = None
+
+        if severity:
+            alerts.append(
+                {
+                    "category": "agent_latency_p95",
+                    "severity": severity,
+                    "target": {"agent": item["agent"]},
+                    "value": p95,
+                    "threshold": AGENT_P95_CRITICAL_MS if severity == "critical" else AGENT_P95_WARNING_MS,
+                    "message": f"Latência p95 elevada no agente {item['agent']}",
+                }
+            )
+
+    alerts.sort(key=lambda item: (item["severity"] != "critical", item["category"], item["message"]))
+
     return {
         "admin_user_id": admin_user_id,
         "request_id": getattr(request.state, "request_id", None),
@@ -329,69 +519,31 @@ def admin_metrics_summary(request: Request, admin_user_id: str = Depends(require
             for (method, path, status), count in top_http_paths
         ],
         "http_duration_ms_avg": [
-            {
-                "method": method,
-                "path": path,
-                "avg_ms": round((vals["sum"] / vals["count"]) * 1000, 2),
-                "count": int(vals["count"]),
-            }
-            for (method, path), vals in http_duration_acc.items()
-            if vals["count"] > 0
+            *http_duration_ms_avg
         ],
         "http_duration_ms_percentiles": [
-            {
-                "method": method,
-                "path": path,
-                "p95_ms": (
-                    round(p95_seconds * 1000, 2)
-                    if (p95_seconds := _histogram_quantile_upper_bound_seconds(http_duration_buckets[(method, path)], 0.95)) is not None
-                    else None
-                ),
-                "p99_ms": (
-                    round(p99_seconds * 1000, 2)
-                    if (p99_seconds := _histogram_quantile_upper_bound_seconds(http_duration_buckets[(method, path)], 0.99)) is not None
-                    else None
-                ),
-                "count": int(http_duration_acc[(method, path)]["count"]),
-            }
-            for (method, path), vals in http_duration_acc.items()
-            if vals["count"] > 0
+            *http_duration_ms_percentiles
         ],
         "agent_calls_total": [
-            {
-                "agent": agent,
-                "status": status,
-                "count": count,
-            }
-            for (agent, status), count in sorted(agent_calls.items(), key=lambda x: x[1], reverse=True)
+            *agent_calls_total
         ],
         "agent_duration_ms_avg": [
-            {
-                "agent": agent,
-                "avg_ms": round((vals["sum"] / vals["count"]) * 1000, 2),
-                "count": int(vals["count"]),
-            }
-            for agent, vals in agent_duration_acc.items()
-            if vals["count"] > 0
+            *agent_duration_ms_avg
         ],
         "agent_duration_ms_percentiles": [
-            {
-                "agent": agent,
-                "p95_ms": (
-                    round(p95_seconds * 1000, 2)
-                    if (p95_seconds := _histogram_quantile_upper_bound_seconds(agent_duration_buckets[agent], 0.95)) is not None
-                    else None
-                ),
-                "p99_ms": (
-                    round(p99_seconds * 1000, 2)
-                    if (p99_seconds := _histogram_quantile_upper_bound_seconds(agent_duration_buckets[agent], 0.99)) is not None
-                    else None
-                ),
-                "count": int(agent_duration_acc[agent]["count"]),
-            }
-            for agent, vals in agent_duration_acc.items()
-            if vals["count"] > 0
+            *agent_duration_ms_percentiles
         ],
+        "alert_thresholds": {
+            "http_error_rate_warning": HTTP_ERROR_RATE_WARNING,
+            "http_error_rate_critical": HTTP_ERROR_RATE_CRITICAL,
+            "http_p95_warning_ms": HTTP_P95_WARNING_MS,
+            "http_p95_critical_ms": HTTP_P95_CRITICAL_MS,
+            "agent_error_rate_warning": AGENT_ERROR_RATE_WARNING,
+            "agent_error_rate_critical": AGENT_ERROR_RATE_CRITICAL,
+            "agent_p95_warning_ms": AGENT_P95_WARNING_MS,
+            "agent_p95_critical_ms": AGENT_P95_CRITICAL_MS,
+        },
+        "alerts": alerts,
     }
 
 

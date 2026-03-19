@@ -27,6 +27,30 @@ interface AvgDurationMetric {
   agent?: string;
 }
 
+interface AlertThresholds {
+  http_error_rate_warning: number;
+  http_error_rate_critical: number;
+  http_p95_warning_ms: number;
+  http_p95_critical_ms: number;
+  agent_error_rate_warning: number;
+  agent_error_rate_critical: number;
+  agent_p95_warning_ms: number;
+  agent_p95_critical_ms: number;
+}
+
+interface AdminAlert {
+  category: string;
+  severity: "warning" | "critical";
+  target: {
+    method?: string;
+    path?: string;
+    agent?: string;
+  };
+  value: number;
+  threshold: number;
+  message: string;
+}
+
 interface AdminMetricsSummary {
   request_id: string | null;
   uptime_seconds: number;
@@ -34,6 +58,8 @@ interface AdminMetricsSummary {
   http_duration_ms_avg: AvgDurationMetric[];
   agent_calls_total: AgentCallMetric[];
   agent_duration_ms_avg: AvgDurationMetric[];
+  alert_thresholds: AlertThresholds;
+  alerts: AdminAlert[];
 }
 
 function formatUptime(seconds: number): string {
@@ -92,6 +118,8 @@ export default function AdminMetricsPage() {
         totalHttpCalls: 0,
         totalAgentCalls: 0,
         totalAgentErrors: 0,
+        totalAlerts: 0,
+        criticalAlerts: 0,
       };
     }
 
@@ -101,7 +129,10 @@ export default function AdminMetricsPage() {
       .filter((item) => item.status === "error")
       .reduce((acc, item) => acc + item.count, 0);
 
-    return { totalHttpCalls, totalAgentCalls, totalAgentErrors };
+    const totalAlerts = data.alerts.length;
+    const criticalAlerts = data.alerts.filter((item) => item.severity === "critical").length;
+
+    return { totalHttpCalls, totalAgentCalls, totalAgentErrors, totalAlerts, criticalAlerts };
   }, [data]);
 
   if (loading || !isSuperAdmin) {
@@ -154,6 +185,30 @@ export default function AdminMetricsPage() {
             <div className="glass rounded-xl p-4 border border-white/10">
               <div className="text-xs text-gray-400 uppercase">Agent Errors</div>
               <div className="text-xl text-white font-bold mt-2 flex items-center gap-2"><Activity className="h-4 w-4 text-red-400" />{totals.totalAgentErrors}</div>
+            </div>
+          </div>
+
+          <div className="glass rounded-xl border border-white/10 overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/10 text-sm text-white font-semibold flex items-center justify-between">
+              <span>Alertas Operacionais</span>
+              <span className="text-xs text-gray-400">{totals.totalAlerts} alertas | {totals.criticalAlerts} críticos</span>
+            </div>
+            <div className="max-h-[260px] overflow-auto divide-y divide-white/5">
+              {data.alerts.length === 0 ? (
+                <div className="px-4 py-5 text-sm text-green-300">Nenhum alerta ativo no momento.</div>
+              ) : (
+                data.alerts.map((alert, idx) => (
+                  <div key={`${alert.category}-${idx}`} className="px-4 py-3 flex items-start gap-3">
+                    <span className={`mt-0.5 h-2.5 w-2.5 rounded-full ${alert.severity === "critical" ? "bg-red-400" : "bg-yellow-400"}`} />
+                    <div className="min-w-0">
+                      <div className="text-sm text-white font-medium">{alert.message}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        valor: {alert.value} | limite: {alert.threshold} | categoria: {alert.category}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

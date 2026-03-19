@@ -14,3 +14,6 @@ def test_admin_metrics_allows_super_admin(client, admin_auth_headers):
     assert "agent_calls_total" in payload
     assert "http_duration_ms_percentiles" in payload
     assert "agent_duration_ms_percentiles" in payload
+    assert "alert_thresholds" in payload
+    assert "alerts" in payload
+    assert isinstance(payload["alerts"], list)
